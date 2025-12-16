@@ -38,7 +38,7 @@
       
       # Superpowers plugin + skills - DECLARATIVE!
       superpowers = {
-        enable = false;  # Устанавливает только плагин
+        enable = true;  # Устанавливает только плагин
 
         # Skills sources - явно указываем какие хотим
         skills = [
