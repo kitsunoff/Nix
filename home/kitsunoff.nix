@@ -49,7 +49,7 @@
               owner = "obra";
               repo = "superpowers";
               rev = "main";
-              sha256 = "sha256-160bw8z5dhbjvz2359j9jqbiif9lwzvliqbs5amrvjk6yw6msdfp";
+              sha256 = "160bw8z5dhbjvz2359j9jqbiif9lwzvliqbs5amrvjk6yw6msdfp";  # БЕЗ префикса sha256-
             };
             skillsDir = "skills";
           }

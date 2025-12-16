@@ -67,7 +67,7 @@ in {
             owner = "obra";
             repo = "superpowers";
             rev = "main";  # You can pin to specific commit for reproducibility
-            sha256 = "sha256-160bw8z5dhbjvz2359j9jqbiif9lwzvliqbs5amrvjk6yw6msdfp";
+            sha256 = "160bw8z5dhbjvz2359j9jqbiif9lwzvliqbs5amrvjk6yw6msdfp";  # БЕЗ префикса sha256-
           };
           description = ''
             Superpowers plugin package source.
@@ -218,21 +218,21 @@ in {
     };
 
     # Superpowers plugin + skills - declarative installation via symlinks to Nix store
-    # Superpowers plugin - максимально просто!
+    # Superpowers plugin
     home.file.".config/opencode/plugin/superpowers.js" = mkIf (cfg.opencode.enable && cfg.opencode.superpowers.enable) {
       source = "${cfg.opencode.superpowers.package}/.opencode/plugin/superpowers.js";
     };
 
-    # # Skills sources - пока закомментировано
-    # home.file = mkIf (cfg.opencode.enable && cfg.opencode.superpowers.enable && cfg.opencode.superpowers.skills != []) (
-    #   lib.listToAttrs (map (source: {
-    #     name = ".config/opencode/skills/${source.name}";
-    #     value = {
-    #       source = "${source.package}/${source.skillsDir}";
-    #       recursive = true;
-    #     };
-    #   }) cfg.opencode.superpowers.skills)
-    # );
+    # Skills sources - каждый источник создаёт свой symlink
+    home.file = mkIf (cfg.opencode.enable && cfg.opencode.superpowers.enable && cfg.opencode.superpowers.skills != []) (
+      lib.listToAttrs (map (source: {
+        name = ".config/opencode/skills/${source.name}";
+        value = {
+          source = "${source.package}/${source.skillsDir}";
+          recursive = true;
+        };
+      }) cfg.opencode.superpowers.skills)
+    );
 
     # Claude Code configuration
     home.activation.claudeAgents = mkIf (cfg.claudeCode.enable && cfg.claudeCode.agentsPath != null) (
