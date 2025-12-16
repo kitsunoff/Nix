@@ -35,6 +35,57 @@
       plugins = [ "opencode-alibaba-qwen3-auth" ];
       defaultModel = "alibaba/coder-model";
       extraConfig = {};
+      
+      # Superpowers plugin + skills - DECLARATIVE!
+      superpowers = {
+        enable = true;  # Устанавливает только плагин
+
+        # Skills sources - явно указываем какие хотим
+        skills = [
+          # Официальные superpowers skills
+          {
+            name = "superpowers";
+            package = pkgs.fetchFromGitHub {
+              owner = "obra";
+              repo = "superpowers";
+              rev = "main";
+              sha256 = "sha256-160bw8z5dhbjvz2359j9jqbiif9lwzvliqbs5amrvjk6yw6msdfp";
+            };
+            skillsDir = "skills";
+          }
+          
+          # Example: Your custom skills repository
+          # {
+          #   name = "my-skills";
+          #   package = pkgs.fetchFromGitHub {
+          #     owner = "your-username";
+          #     repo = "opencode-skills";
+          #     rev = "main";
+          #     sha256 = "sha256-...";
+          #   };
+          #   skillsDir = "skills";
+          # }
+          
+          # Example: Company/team skills
+          # {
+          #   name = "company-standards";
+          #   package = pkgs.fetchFromGitHub {
+          #     owner = "company-org";
+          #     repo = "ai-skills";
+          #     rev = "v1.2.0";
+          #     sha256 = "sha256-...";
+          #   };
+          #   skillsDir = "opencode/skills";
+          # }
+          
+          # Example: Local skills for development
+          # {
+          #   name = "local-dev";
+          #   package = /Users/kitsunoff/dev/my-skills;
+          #   skillsDir = "skills";
+          # }
+        ];
+      };
     };
     
     # Claude Code configuration
@@ -103,4 +154,7 @@
 
   # Let Home Manager install and manage itself
   programs.home-manager.enable = true;
+
+  # DEBUG: Test file to verify home.file works
+  home.file.".config/opencode/TEST_FILE.txt".text = "This is a test file from home-manager";
 }

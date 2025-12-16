@@ -57,6 +57,129 @@ in {
         default = {};
         description = "Extra configuration for OpenCode";
       };
+
+      superpowers = {
+        enable = mkEnableOption "Superpowers plugin for OpenCode";
+        
+        package = mkOption {
+          type = types.package;
+          default = pkgs.fetchFromGitHub {
+            owner = "obra";
+            repo = "superpowers";
+            rev = "main";  # You can pin to specific commit for reproducibility
+            sha256 = "sha256-160bw8z5dhbjvz2359j9jqbiif9lwzvliqbs5amrvjk6yw6msdfp";
+          };
+          description = ''
+            Superpowers plugin package source.
+            Default: fetches from official GitHub repository (main branch).
+            
+            You can override this with your own derivation or specific version:
+            - Pin to specific commit for reproducibility
+            - Use your own fork
+            - Point to local directory during development
+          '';
+          example = literalExpression ''
+            # Pin to specific commit
+            pkgs.fetchFromGitHub {
+              owner = "obra";
+              repo = "superpowers";
+              rev = "abc123...";  # specific commit hash
+              sha256 = "sha256-...";
+            }
+            
+            # Or use local directory for development
+            /path/to/local/superpowers
+          '';
+        };
+
+        # Skills sources to install
+        skills = mkOption {
+          type = types.listOf (types.submodule {
+            options = {
+              name = mkOption {
+                type = types.str;
+                description = "Name of the skills source (used for directory naming)";
+                example = "superpowers";
+              };
+
+              package = mkOption {
+                type = types.package;
+                description = "Package source for skills";
+                example = literalExpression ''
+                  pkgs.fetchFromGitHub {
+                    owner = "username";
+                    repo = "my-skills";
+                    rev = "main";
+                    sha256 = "sha256-...";
+                  }
+                '';
+              };
+
+              skillsDir = mkOption {
+                type = types.str;
+                default = "skills";
+                description = "Path to skills directory inside the package";
+                example = "skills";
+              };
+            };
+          });
+          default = [];
+          description = ''
+            Skills sources to install.
+            Each source will be symlinked to ~/.config/opencode/skills/<name>/
+            
+            To install official superpowers skills, add them explicitly to the list.
+            
+            Skills priority (highest to lowest):
+            1. Project skills (.opencode/skills/)
+            2. Personal skills (~/.config/opencode/skills/)
+            3. Installed skills sources (in order of list)
+          '';
+          example = literalExpression ''
+            [
+              # Official superpowers skills
+              {
+                name = "superpowers";
+                package = pkgs.fetchFromGitHub {
+                  owner = "obra";
+                  repo = "superpowers";
+                  rev = "main";
+                  sha256 = "sha256-...";
+                };
+                skillsDir = "skills";
+              }
+              # Your custom skills
+              {
+                name = "my-custom";
+                package = pkgs.fetchFromGitHub {
+                  owner = "username";
+                  repo = "my-skills";
+                  rev = "main";
+                  sha256 = "sha256-...";
+                };
+                skillsDir = "skills";
+              }
+              # Company/team skills
+              {
+                name = "company-standards";
+                package = pkgs.fetchFromGitHub {
+                  owner = "company-org";
+                  repo = "ai-skills";
+                  rev = "v1.2.0";
+                  sha256 = "sha256-...";
+                };
+                skillsDir = "opencode/skills";
+              }
+              # Local development skills
+              {
+                name = "local";
+                package = /path/to/local/skills;
+                skillsDir = ".";
+              }
+            ]
+          '';
+        };
+      };
     };
 
     claudeCode = {
@@ -93,6 +216,28 @@ in {
         model = cfg.opencode.defaultModel;
       }) // cfg.opencode.extraConfig;
     };
+
+    # Superpowers plugin + skills - declarative installation via symlinks to Nix store
+    home.file = mkMerge [
+      # Superpowers plugin
+      (mkIf (cfg.opencode.enable && cfg.opencode.superpowers.enable) {
+        ".config/opencode/plugin/superpowers.js" = {
+          source = "${cfg.opencode.superpowers.package}/.opencode/plugin/superpowers.js";
+        };
+      })
+      
+      # Skills sources - create symlinks for each source
+      # Structure: ~/.config/opencode/skills/<source-name>/ -> /nix/store/.../<skillsDir>/
+      (mkIf (cfg.opencode.enable && cfg.opencode.superpowers.enable && cfg.opencode.superpowers.skills != []) (
+        lib.listToAttrs (map (source: {
+          name = ".config/opencode/skills/${source.name}";
+          value = {
+            source = "${source.package}/${source.skillsDir}";
+            recursive = true;  # Symlink entire directory
+          };
+        }) cfg.opencode.superpowers.skills)
+      ))
+    ];
 
     # Claude Code configuration
     home.activation.claudeAgents = mkIf (cfg.claudeCode.enable && cfg.claudeCode.agentsPath != null) (
