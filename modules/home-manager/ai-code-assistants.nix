@@ -218,26 +218,21 @@ in {
     };
 
     # Superpowers plugin + skills - declarative installation via symlinks to Nix store
-    home.file = mkMerge [
-      # Superpowers plugin
-      (mkIf (cfg.opencode.enable && cfg.opencode.superpowers.enable) {
-        ".config/opencode/plugin/superpowers.js" = {
-          source = "${cfg.opencode.superpowers.package}/.opencode/plugin/superpowers.js";
-        };
-      })
-      
-      # Skills sources - create symlinks for each source
-      # Structure: ~/.config/opencode/skills/<source-name>/ -> /nix/store/.../<skillsDir>/
-      (mkIf (cfg.opencode.enable && cfg.opencode.superpowers.enable && cfg.opencode.superpowers.skills != []) (
-        lib.listToAttrs (map (source: {
-          name = ".config/opencode/skills/${source.name}";
-          value = {
-            source = "${source.package}/${source.skillsDir}";
-            recursive = true;  # Symlink entire directory
-          };
-        }) cfg.opencode.superpowers.skills)
-      ))
-    ];
+    # Superpowers plugin - максимально просто!
+    home.file.".config/opencode/plugin/superpowers.js" = mkIf (cfg.opencode.enable && cfg.opencode.superpowers.enable) {
+      source = "${cfg.opencode.superpowers.package}/.opencode/plugin/superpowers.js";
+    };
+
+    # # Skills sources - пока закомментировано
+    # home.file = mkIf (cfg.opencode.enable && cfg.opencode.superpowers.enable && cfg.opencode.superpowers.skills != []) (
+    #   lib.listToAttrs (map (source: {
+    #     name = ".config/opencode/skills/${source.name}";
+    #     value = {
+    #       source = "${source.package}/${source.skillsDir}";
+    #       recursive = true;
+    #     };
+    #   }) cfg.opencode.superpowers.skills)
+    # );
 
     # Claude Code configuration
     home.activation.claudeAgents = mkIf (cfg.claudeCode.enable && cfg.claudeCode.agentsPath != null) (
