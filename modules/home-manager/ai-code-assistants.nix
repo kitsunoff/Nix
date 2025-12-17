@@ -58,54 +58,28 @@ in {
         description = "Extra configuration for OpenCode";
       };
 
-      superpowers = {
-        enable = mkEnableOption "Superpowers plugin for OpenCode";
+      # Skills configuration (opencode-skills plugin)
+      skills = {
+        enable = mkEnableOption "opencode-skills plugin";
         
-        package = mkOption {
-          type = types.package;
-          default = pkgs.fetchFromGitHub {
-            owner = "obra";
-            repo = "superpowers";
-            rev = "main";  # You can pin to specific commit for reproducibility
-            sha256 = "160bw8z5dhbjvz2359j9jqbiif9lwzvliqbs5amrvjk6yw6msdfp";  # БЕЗ префикса sha256-
-          };
-          description = ''
-            Superpowers plugin package source.
-            Default: fetches from official GitHub repository (main branch).
-            
-            You can override this with your own derivation or specific version:
-            - Pin to specific commit for reproducibility
-            - Use your own fork
-            - Point to local directory during development
-          '';
-          example = literalExpression ''
-            # Pin to specific commit
-            pkgs.fetchFromGitHub {
-              owner = "obra";
-              repo = "superpowers";
-              rev = "abc123...";  # specific commit hash
-              sha256 = "sha256-...";
-            }
-            
-            # Or use local directory for development
-            /path/to/local/superpowers
-          '';
-        };
-
-        # Skills sources to install
-        skills = mkOption {
+        # Skills sources (local, GitHub, or other)
+        sources = mkOption {
           type = types.listOf (types.submodule {
             options = {
               name = mkOption {
                 type = types.str;
                 description = "Name of the skills source (used for directory naming)";
-                example = "superpowers";
+                example = "company-standards";
               };
 
               package = mkOption {
-                type = types.package;
-                description = "Package source for skills";
+                type = types.either types.package types.path;
+                description = "Package or path source for skills";
                 example = literalExpression ''
+                  # Local path
+                  ./dotfiles/skills
+                  
+                  # Or GitHub package
                   pkgs.fetchFromGitHub {
                     owner = "username";
                     repo = "my-skills";
@@ -117,7 +91,7 @@ in {
 
               skillsDir = mkOption {
                 type = types.str;
-                default = "skills";
+                default = ".";
                 description = "Path to skills directory inside the package";
                 example = "skills";
               };
@@ -125,56 +99,40 @@ in {
           });
           default = [];
           description = ''
-            Skills sources to install.
-            Each source will be symlinked to ~/.config/opencode/skills/<name>/
+            Skills sources to install (local paths, GitHub repos, etc).
+            Each skill directory inside the source will be symlinked directly to:
+            ~/.config/opencode/skills/<skill-name>/
             
-            To install official superpowers skills, add them explicitly to the list.
+            This creates a flat structure where all skills from all sources
+            are at the same level.
             
-            Skills priority (highest to lowest):
-            1. Project skills (.opencode/skills/)
-            2. Personal skills (~/.config/opencode/skills/)
-            3. Installed skills sources (in order of list)
+            opencode-skills plugin auto-discovers skills from:
+            1. .opencode/skills/ (project-local, highest priority)
+            2. ~/.opencode/skills/ (global user skills)
+            3. ~/.config/opencode/skills/ (XDG location - where we symlink)
+            
+            Example structure:
+              dotfiles/skills/example-skill/  → ~/.config/opencode/skills/example-skill/
+              dotfiles/skills/another-skill/  → ~/.config/opencode/skills/another-skill/
           '';
           example = literalExpression ''
             [
-              # Official superpowers skills
+              # Your dotfiles skills
               {
-                name = "superpowers";
-                package = pkgs.fetchFromGitHub {
-                  owner = "obra";
-                  repo = "superpowers";
-                  rev = "main";
-                  sha256 = "sha256-...";
-                };
-                skillsDir = "skills";
+                name = "dotfiles";  # Just for reference, not used in paths
+                package = ./dotfiles/skills;
+                skillsDir = ".";
               }
-              # Your custom skills
+              # GitHub skills
               {
-                name = "my-custom";
-                package = pkgs.fetchFromGitHub {
-                  owner = "username";
-                  repo = "my-skills";
-                  rev = "main";
-                  sha256 = "sha256-...";
-                };
-                skillsDir = "skills";
-              }
-              # Company/team skills
-              {
-                name = "company-standards";
+                name = "company";
                 package = pkgs.fetchFromGitHub {
                   owner = "company-org";
                   repo = "ai-skills";
                   rev = "v1.2.0";
                   sha256 = "sha256-...";
                 };
-                skillsDir = "opencode/skills";
-              }
-              # Local development skills
-              {
-                name = "local";
-                package = /path/to/local/skills;
-                skillsDir = ".";
+                skillsDir = "skills";
               }
             ]
           '';
@@ -210,31 +168,42 @@ in {
     programs.opencode = mkIf cfg.opencode.enable {
       enable = true;
       agents = mkAgentsFromDir cfg.opencode.agentsPath;
-      settings = {
-        plugin = cfg.opencode.plugins;
-      } // (optionalAttrs (cfg.opencode.defaultModel != null) {
-        model = cfg.opencode.defaultModel;
-      }) // cfg.opencode.extraConfig;
+      # Don't use settings - we'll manage opencode.json directly via home.file
     };
 
-    # Superpowers plugin + skills
+    # OpenCode files (config + skills)
     home.file = mkMerge [
-      # Superpowers plugin
-      (mkIf (cfg.opencode.enable && cfg.opencode.superpowers.enable) {
-        ".config/opencode/plugin/superpowers.js" = {
-          source = "${cfg.opencode.superpowers.package}/.opencode/plugin/superpowers.js";
+      # OpenCode config file (opencode.json)
+      (mkIf cfg.opencode.enable {
+        ".config/opencode/opencode.json" = {
+          text = builtins.toJSON ({
+            "$schema" = "https://opencode.ai/config.json";
+            plugin = cfg.opencode.plugins;
+          } // (optionalAttrs (cfg.opencode.defaultModel != null) {
+            model = cfg.opencode.defaultModel;
+          }) // cfg.opencode.extraConfig);
         };
       })
 
-      # Skills sources
-      (mkIf (cfg.opencode.enable && cfg.opencode.superpowers.enable && cfg.opencode.superpowers.skills != []) (
-        lib.listToAttrs (map (source: {
-          name = ".config/opencode/skills/${source.name}";
-          value = {
-            source = "${source.package}/${source.skillsDir}";
-            recursive = true;
-          };
-        }) cfg.opencode.superpowers.skills)
+      # Skills configuration (opencode-skills plugin)
+      # Map each skill directory to a flat structure in ~/.config/opencode/skills/
+      (mkIf (cfg.opencode.enable && cfg.opencode.skills.enable && cfg.opencode.skills.sources != []) (
+        lib.mkMerge (map (source:
+          let
+            skillsBase = "${source.package}/${source.skillsDir}";
+            skillDirs = builtins.readDir skillsBase;
+            
+            # Filter only directories (each is a skill)
+            skills = lib.filterAttrs (name: type: type == "directory") skillDirs;
+          in
+            # Create symlink for each skill directory
+            lib.mapAttrs' (skillName: type:
+              lib.nameValuePair ".config/opencode/skills/${skillName}" {
+                source = skillsBase + "/${skillName}";
+                recursive = true;
+              }
+            ) skills
+        ) cfg.opencode.skills.sources)
       ))
     ];
 

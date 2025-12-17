@@ -31,59 +31,38 @@
     # OpenCode configuration
     opencode = {
       enable = true;
-      agentsPath = ../dotfiles/agents;  # Or ../dotfiles/agents-opencode
-      plugins = [ "opencode-alibaba-qwen3-auth" ];
+      agentsPath = ../dotfiles/agents;
+      plugins = [ 
+        "opencode-alibaba-qwen3-auth"
+        "opencode-skills"  # Skills plugin by malhashemi
+      ];
       defaultModel = "alibaba/coder-model";
       extraConfig = {};
       
-      # Superpowers plugin + skills - DECLARATIVE!
-      superpowers = {
-        enable = true;  # Устанавливает только плагин
-
-        # Skills sources - явно указываем какие хотим
-        skills = [
-          # Официальные superpowers skills
+      # Skills configuration (opencode-skills plugin)
+      # Each skill directory will be mapped to ~/.config/opencode/skills/<skill-name>/
+      skills = {
+        enable = true;
+        sources = [
+          # Your dotfiles skills (flat mapping)
+          # dotfiles/skills/example-skill/ → ~/.config/opencode/skills/example-skill/
+          {
+            name = "dotfiles";  # Just a label
+            package = ../dotfiles/skills;
+            skillsDir = ".";
+          }
+          
+          # Superpowers skills from obra/superpowers
           {
             name = "superpowers";
             package = pkgs.fetchFromGitHub {
               owner = "obra";
               repo = "superpowers";
               rev = "main";
-              sha256 = "160bw8z5dhbjvz2359j9jqbiif9lwzvliqbs5amrvjk6yw6msdfp";  # БЕЗ префикса sha256-
+              sha256 = "sha256-1zVdDfdmyp2rKnrhSPfnNLkYF5ZJpjLE33LBVj7iC5g=";
             };
             skillsDir = "skills";
           }
-          
-          # Example: Your custom skills repository
-          # {
-          #   name = "my-skills";
-          #   package = pkgs.fetchFromGitHub {
-          #     owner = "your-username";
-          #     repo = "opencode-skills";
-          #     rev = "main";
-          #     sha256 = "sha256-...";
-          #   };
-          #   skillsDir = "skills";
-          # }
-          
-          # Example: Company/team skills
-          # {
-          #   name = "company-standards";
-          #   package = pkgs.fetchFromGitHub {
-          #     owner = "company-org";
-          #     repo = "ai-skills";
-          #     rev = "v1.2.0";
-          #     sha256 = "sha256-...";
-          #   };
-          #   skillsDir = "opencode/skills";
-          # }
-          
-          # Example: Local skills for development
-          # {
-          #   name = "local-dev";
-          #   package = /Users/kitsunoff/dev/my-skills;
-          #   skillsDir = "skills";
-          # }
         ];
       };
     };
