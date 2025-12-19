@@ -25,11 +25,40 @@ let
       in
         agentsAttrset;
 
+  # Built-in MCP servers (auto-configured when enabled)
+  builtinMcpServers =
+    (optionalAttrs cfg.vibeKanban.enable {
+      vibe-kanban = {
+        enable = true;
+        command = "${pkgs.vibe-kanban}/bin/vibe-kanban-mcp";
+        args = [];
+        env = {};
+      };
+    })
+    // (optionalAttrs cfg.context7.enable {
+      context7 = {
+        enable = true;
+        command = "${pkgs.context7-mcp}/bin/context7-mcp";
+        args = [];
+        env = {};
+      };
+    })
+    // (optionalAttrs cfg.nixos.enable {
+      nixos = {
+        enable = true;
+        command = "${pkgs.mcp-nixos}/bin/mcp-nixos";
+        args = [];
+        env = {};
+      };
+    });
+
+  # Merge built-in and custom MCP servers
+  allMcpServers = builtinMcpServers // cfg.mcpServers;
+
   # Get enabled MCP servers
-  enabledMcpServers = lib.filterAttrs (n: s: s.enable) cfg.mcpServers;
+  enabledMcpServers = lib.filterAttrs (n: s: s.enable) allMcpServers;
 
   # Convert MCP server config to Claude Code / Qwen Code format
-  # { command = "..."; args = [...]; env = {...}; }
   mkStdioMcpConfig = servers:
     lib.mapAttrs (name: srv: {
       command = srv.command;
@@ -39,7 +68,6 @@ let
     })) servers;
 
   # Convert MCP server config to OpenCode format
-  # { type = "local"; command = [...]; enabled = true; environment = {...}; }
   mkOpenCodeMcpConfig = servers:
     lib.mapAttrs (name: srv: {
       type = "local";
@@ -64,14 +92,12 @@ let
         type = types.listOf types.str;
         default = [];
         description = "Arguments for the MCP server command";
-        example = [ "-y" "@upstash/context7-mcp" ];
       };
 
       env = mkOption {
         type = types.attrsOf types.str;
         default = {};
         description = "Environment variables for the MCP server";
-        example = { API_KEY = "your-key"; };
       };
     };
   };
@@ -80,37 +106,33 @@ in {
   options.programs.aiCodeAssistants = {
     enable = mkEnableOption "AI Code Assistants configuration";
 
-    # ========== MCP Servers ==========
+    # ========== Built-in MCP Servers ==========
+    vibeKanban = {
+      enable = mkEnableOption "VibeKanban - local kanban board for AI agents";
+    };
+
+    context7 = {
+      enable = mkEnableOption "Context7 - up-to-date library documentation";
+    };
+
+    nixos = {
+      enable = mkEnableOption "NixOS MCP - packages, options, Home Manager info";
+    };
+
+    # ========== Custom MCP Servers ==========
     mcpServers = mkOption {
       type = types.attrsOf mcpServerType;
       default = {};
       description = ''
-        MCP servers configuration shared across all AI code assistants.
-        Each enabled server will be configured for Claude Code, OpenCode, and Qwen Code.
-
-        Use packages from mcp-servers-nix overlay (available in pkgs after overlay):
-        - pkgs.mcp-server-context7
-        - pkgs.mcp-server-nixos
-        - pkgs.mcp-server-fetch
-        - pkgs.mcp-server-filesystem
-        - etc.
+        Additional MCP servers configuration.
+        Built-in servers (vibeKanban, context7, nixos) are configured separately.
       '';
       example = literalExpression ''
         {
-          context7 = {
+          filesystem = {
             enable = true;
-            command = "''${pkgs.mcp-server-context7}/bin/mcp-server-context7";
-            args = [];
-          };
-          nixos = {
-            enable = true;
-            command = "''${pkgs.mcp-server-nixos}/bin/mcp-server-nixos";
-            args = [];
-          };
-          vibe-kanban = {
-            enable = true;
-            command = "npx";
-            args = [ "-y" "vibe-kanban" "mcp" ];
+            command = "''${pkgs.mcp-server-filesystem}/bin/mcp-server-filesystem";
+            args = [ "/home/user/projects" ];
           };
         }
       '';
@@ -123,21 +145,18 @@ in {
       agentsPath = mkOption {
         type = types.nullOr types.path;
         default = null;
-        example = literalExpression "./dotfiles/agents-opencode";
         description = "Path to OpenCode agents directory";
       };
 
       plugins = mkOption {
         type = types.listOf types.str;
         default = [];
-        example = [ "opencode-alibaba-qwen3-auth" ];
         description = "List of OpenCode plugins";
       };
 
       defaultModel = mkOption {
         type = types.nullOr types.str;
         default = null;
-        example = "alibaba/coder-model";
         description = "Default model for OpenCode";
       };
 
@@ -147,7 +166,6 @@ in {
         description = "Extra configuration for OpenCode";
       };
 
-      # Skills configuration (opencode-skills plugin)
       skills = {
         enable = mkEnableOption "opencode-skills plugin";
 
@@ -157,7 +175,6 @@ in {
               name = mkOption {
                 type = types.str;
                 description = "Name of the skills source";
-                example = "company-standards";
               };
 
               package = mkOption {
@@ -169,7 +186,6 @@ in {
                 type = types.str;
                 default = ".";
                 description = "Path to skills directory inside the package";
-                example = "skills";
               };
             };
           });
@@ -186,7 +202,6 @@ in {
       agentsPath = mkOption {
         type = types.nullOr types.path;
         default = null;
-        example = literalExpression "./dotfiles/agents-claude";
         description = "Path to Claude Code agents directory";
       };
 
@@ -204,7 +219,6 @@ in {
       agentsPath = mkOption {
         type = types.nullOr types.path;
         default = null;
-        example = literalExpression "./dotfiles/agents-qwen";
         description = "Path to Qwen Code agents directory";
       };
 
@@ -217,6 +231,9 @@ in {
   };
 
   config = mkIf cfg.enable {
+    # ========== Packages ==========
+    home.packages = lib.optionals cfg.vibeKanban.enable [ pkgs.vibe-kanban ];
+
     # ========== OpenCode Configuration ==========
     programs.opencode = mkIf cfg.opencode.enable {
       enable = true;
@@ -259,9 +276,12 @@ in {
         ) cfg.opencode.skills.sources)
       ))
 
-      # ----- Claude Code config (~/.claude.json) -----
+      # ----- Claude Code MCP config (~/.claude/settings.json) -----
+      # Note: ~/.claude.json is managed by Claude Code itself
+      # We use ~/.claude/settings.json for user MCP servers
       (mkIf (cfg.claudeCode.enable && enabledMcpServers != {}) {
-        ".claude.json" = {
+        ".claude/settings.json" = {
+          force = true;  # Override existing file
           text = builtins.toJSON ({
             mcpServers = mkStdioMcpConfig enabledMcpServers;
           } // cfg.claudeCode.extraConfig);
@@ -271,6 +291,7 @@ in {
       # ----- Qwen Code config (~/.qwen/settings.json) -----
       (mkIf (cfg.qwenCode.enable && enabledMcpServers != {}) {
         ".qwen/settings.json" = {
+          force = true;  # Override existing file
           text = builtins.toJSON ({
             mcpServers = mkStdioMcpConfig enabledMcpServers;
           } // cfg.qwenCode.extraConfig);
@@ -279,7 +300,6 @@ in {
     ];
 
     # ========== Activation Scripts ==========
-    # Claude Code agents symlink
     home.activation.claudeAgents = mkIf (cfg.claudeCode.enable && cfg.claudeCode.agentsPath != null) (
       lib.hm.dag.entryAfter ["writeBoundary"] ''
         $DRY_RUN_CMD mkdir -p $VERBOSE_ARG ${config.home.homeDirectory}/.claude
@@ -288,7 +308,6 @@ in {
       ''
     );
 
-    # Qwen Code agents symlink
     home.activation.qwenAgents = mkIf (cfg.qwenCode.enable && cfg.qwenCode.agentsPath != null) (
       lib.hm.dag.entryAfter ["writeBoundary"] ''
         $DRY_RUN_CMD mkdir -p $VERBOSE_ARG ${config.home.homeDirectory}/.qwen

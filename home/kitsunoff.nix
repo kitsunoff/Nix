@@ -20,38 +20,17 @@
 
   # User-specific packages (not system-wide)
   home.packages = with pkgs; [
-    # AI tools
-    vibe-kanban  # Local kanban board for AI agents
+    # Add user-specific packages here
   ];
 
   # AI Code Assistants configuration
-  # Each tool has its own agents directory
   programs.aiCodeAssistants = {
     enable = true;
 
-    # ========== MCP Servers (shared across all AI tools) ==========
-    mcpServers = {
-      # Context7 - актуальная документация библиотек
-      context7 = {
-        enable = true;
-        command = "${pkgs.context7-mcp}/bin/context7-mcp";
-        args = [];
-      };
-
-      # NixOS - пакеты, опции, Home Manager
-      nixos = {
-        enable = true;
-        command = "${pkgs.mcp-nixos}/bin/mcp-nixos";
-        args = [];
-      };
-
-      # VibeKanban - канбан доска для AI агентов
-      vibe-kanban = {
-        enable = true;
-        command = "${pkgs.vibe-kanban}/bin/vibe-kanban-mcp";
-        args = [];
-      };
-    };
+    # ========== Built-in MCP Servers ==========
+    vibeKanban.enable = true;   # Канбан доска для AI агентов (+ CLI)
+    context7.enable = true;     # Актуальная документация библиотек
+    nixos.enable = true;        # NixOS пакеты, опции, Home Manager
 
     # ========== OpenCode configuration ==========
     opencode = {

@@ -22,11 +22,13 @@ stdenv.mkDerivation {
 
     # Main CLI wrapper
     makeWrapper ${nodejs}/bin/npx $out/bin/vibe-kanban \
+      --prefix PATH : ${nodejs}/bin \
       --add-flags "-y" \
       --add-flags "vibe-kanban@latest"
 
     # MCP server wrapper (for AI assistants)
     makeWrapper ${nodejs}/bin/npx $out/bin/vibe-kanban-mcp \
+      --prefix PATH : ${nodejs}/bin \
       --add-flags "-y" \
       --add-flags "vibe-kanban@latest" \
       --add-flags "--mcp"
