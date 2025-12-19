@@ -20,38 +20,61 @@
 
   # User-specific packages (not system-wide)
   home.packages = with pkgs; [
-    # Add user-specific packages here
+    # AI tools
+    vibe-kanban  # Local kanban board for AI agents
   ];
 
   # AI Code Assistants configuration
   # Each tool has its own agents directory
   programs.aiCodeAssistants = {
     enable = true;
-    
-    # OpenCode configuration
+
+    # ========== MCP Servers (shared across all AI tools) ==========
+    mcpServers = {
+      # Context7 - актуальная документация библиотек
+      context7 = {
+        enable = true;
+        command = "${pkgs.context7-mcp}/bin/context7-mcp";
+        args = [];
+      };
+
+      # NixOS - пакеты, опции, Home Manager
+      nixos = {
+        enable = true;
+        command = "${pkgs.mcp-nixos}/bin/mcp-nixos";
+        args = [];
+      };
+
+      # VibeKanban - канбан доска для AI агентов
+      vibe-kanban = {
+        enable = true;
+        command = "${pkgs.vibe-kanban}/bin/vibe-kanban-mcp";
+        args = [];
+      };
+    };
+
+    # ========== OpenCode configuration ==========
     opencode = {
       enable = true;
       agentsPath = ../dotfiles/agents;
-      plugins = [ 
+      plugins = [
         "opencode-alibaba-qwen3-auth"
         "opencode-skills"  # Skills plugin by malhashemi
       ];
       defaultModel = "alibaba/coder-model";
       extraConfig = {};
-      
+
       # Skills configuration (opencode-skills plugin)
-      # Each skill directory will be mapped to ~/.config/opencode/skills/<skill-name>/
       skills = {
         enable = true;
         sources = [
-          # Your dotfiles skills (flat mapping)
-          # dotfiles/skills/example-skill/ → ~/.config/opencode/skills/example-skill/
+          # Your dotfiles skills
           {
-            name = "dotfiles";  # Just a label
+            name = "dotfiles";
             package = ../dotfiles/skills;
             skillsDir = ".";
           }
-          
+
           # Superpowers skills from obra/superpowers
           {
             name = "superpowers";
@@ -66,16 +89,14 @@
         ];
       };
     };
-    
-    # Claude Code configuration
-    # Agents will be symlinked to ~/.claude/agents/
+
+    # ========== Claude Code configuration ==========
     claudeCode = {
       enable = true;
       agentsPath = ../dotfiles/agents-claude;
     };
-    
-    # Qwen Code configuration
-    # Agents will be symlinked to ~/.qwen/agents/
+
+    # ========== Qwen Code configuration ==========
     qwenCode = {
       enable = true;
       agentsPath = ../dotfiles/agents-qwen;
@@ -133,7 +154,4 @@
 
   # Let Home Manager install and manage itself
   programs.home-manager.enable = true;
-
-  # DEBUG: Test file to verify home.file works
-  home.file.".config/opencode/TEST_FILE.txt".text = "This is a test file from home-manager";
 }

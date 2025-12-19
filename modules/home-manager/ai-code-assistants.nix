@@ -1,6 +1,7 @@
 # AI Code Assistants module
-# Separate configuration for OpenCode, Claude Code, Qwen Code
-{ config, lib, pkgs, ... }:
+# Unified configuration for OpenCode, Claude Code, Qwen Code
+# With MCP server support via mcp-servers-nix
+{ config, lib, pkgs, mcp-servers-nix, ... }:
 
 with lib;
 
@@ -8,7 +9,7 @@ let
   cfg = config.programs.aiCodeAssistants;
 
   # Simple helper to create agents attrset from directory
-  mkAgentsFromDir = agentsPath: 
+  mkAgentsFromDir = agentsPath:
     if agentsPath == null then {}
     else
       let
@@ -18,26 +19,114 @@ let
             agentName = lib.removeSuffix ".md" name;
           in
             lib.nameValuePair agentName (agentsPath + "/${name}")
-        ) (lib.filterAttrs (name: type: 
+        ) (lib.filterAttrs (name: type:
           type == "regular" && lib.hasSuffix ".md" name
         ) agentFiles);
       in
         agentsAttrset;
 
+  # Get enabled MCP servers
+  enabledMcpServers = lib.filterAttrs (n: s: s.enable) cfg.mcpServers;
+
+  # Convert MCP server config to Claude Code / Qwen Code format
+  # { command = "..."; args = [...]; env = {...}; }
+  mkStdioMcpConfig = servers:
+    lib.mapAttrs (name: srv: {
+      command = srv.command;
+      args = srv.args;
+    } // (optionalAttrs (srv.env != {}) {
+      env = srv.env;
+    })) servers;
+
+  # Convert MCP server config to OpenCode format
+  # { type = "local"; command = [...]; enabled = true; environment = {...}; }
+  mkOpenCodeMcpConfig = servers:
+    lib.mapAttrs (name: srv: {
+      type = "local";
+      command = [ srv.command ] ++ srv.args;
+      enabled = true;
+    } // (optionalAttrs (srv.env != {}) {
+      environment = srv.env;
+    })) servers;
+
+  # MCP server submodule type
+  mcpServerType = types.submodule {
+    options = {
+      enable = mkEnableOption "this MCP server";
+
+      command = mkOption {
+        type = types.str;
+        description = "Command to run the MCP server";
+        example = "npx";
+      };
+
+      args = mkOption {
+        type = types.listOf types.str;
+        default = [];
+        description = "Arguments for the MCP server command";
+        example = [ "-y" "@upstash/context7-mcp" ];
+      };
+
+      env = mkOption {
+        type = types.attrsOf types.str;
+        default = {};
+        description = "Environment variables for the MCP server";
+        example = { API_KEY = "your-key"; };
+      };
+    };
+  };
+
 in {
   options.programs.aiCodeAssistants = {
     enable = mkEnableOption "AI Code Assistants configuration";
 
+    # ========== MCP Servers ==========
+    mcpServers = mkOption {
+      type = types.attrsOf mcpServerType;
+      default = {};
+      description = ''
+        MCP servers configuration shared across all AI code assistants.
+        Each enabled server will be configured for Claude Code, OpenCode, and Qwen Code.
+
+        Use packages from mcp-servers-nix overlay (available in pkgs after overlay):
+        - pkgs.mcp-server-context7
+        - pkgs.mcp-server-nixos
+        - pkgs.mcp-server-fetch
+        - pkgs.mcp-server-filesystem
+        - etc.
+      '';
+      example = literalExpression ''
+        {
+          context7 = {
+            enable = true;
+            command = "''${pkgs.mcp-server-context7}/bin/mcp-server-context7";
+            args = [];
+          };
+          nixos = {
+            enable = true;
+            command = "''${pkgs.mcp-server-nixos}/bin/mcp-server-nixos";
+            args = [];
+          };
+          vibe-kanban = {
+            enable = true;
+            command = "npx";
+            args = [ "-y" "vibe-kanban" "mcp" ];
+          };
+        }
+      '';
+    };
+
+    # ========== OpenCode ==========
     opencode = {
       enable = mkEnableOption "OpenCode";
-      
+
       agentsPath = mkOption {
         type = types.nullOr types.path;
         default = null;
         example = literalExpression "./dotfiles/agents-opencode";
         description = "Path to OpenCode agents directory";
       };
-      
+
       plugins = mkOption {
         type = types.listOf types.str;
         default = [];
@@ -61,32 +150,19 @@ in {
       # Skills configuration (opencode-skills plugin)
       skills = {
         enable = mkEnableOption "opencode-skills plugin";
-        
-        # Skills sources (local, GitHub, or other)
+
         sources = mkOption {
           type = types.listOf (types.submodule {
             options = {
               name = mkOption {
                 type = types.str;
-                description = "Name of the skills source (used for directory naming)";
+                description = "Name of the skills source";
                 example = "company-standards";
               };
 
               package = mkOption {
                 type = types.either types.package types.path;
                 description = "Package or path source for skills";
-                example = literalExpression ''
-                  # Local path
-                  ./dotfiles/skills
-                  
-                  # Or GitHub package
-                  pkgs.fetchFromGitHub {
-                    owner = "username";
-                    repo = "my-skills";
-                    rev = "main";
-                    sha256 = "sha256-...";
-                  }
-                '';
               };
 
               skillsDir = mkOption {
@@ -98,105 +174,82 @@ in {
             };
           });
           default = [];
-          description = ''
-            Skills sources to install (local paths, GitHub repos, etc).
-            Each skill directory inside the source will be symlinked directly to:
-            ~/.config/opencode/skills/<skill-name>/
-            
-            This creates a flat structure where all skills from all sources
-            are at the same level.
-            
-            opencode-skills plugin auto-discovers skills from:
-            1. .opencode/skills/ (project-local, highest priority)
-            2. ~/.opencode/skills/ (global user skills)
-            3. ~/.config/opencode/skills/ (XDG location - where we symlink)
-            
-            Example structure:
-              dotfiles/skills/example-skill/  → ~/.config/opencode/skills/example-skill/
-              dotfiles/skills/another-skill/  → ~/.config/opencode/skills/another-skill/
-          '';
-          example = literalExpression ''
-            [
-              # Your dotfiles skills
-              {
-                name = "dotfiles";  # Just for reference, not used in paths
-                package = ./dotfiles/skills;
-                skillsDir = ".";
-              }
-              # GitHub skills
-              {
-                name = "company";
-                package = pkgs.fetchFromGitHub {
-                  owner = "company-org";
-                  repo = "ai-skills";
-                  rev = "v1.2.0";
-                  sha256 = "sha256-...";
-                };
-                skillsDir = "skills";
-              }
-            ]
-          '';
+          description = "Skills sources to install";
         };
       };
     };
 
+    # ========== Claude Code ==========
     claudeCode = {
       enable = mkEnableOption "Claude Code";
-      
+
       agentsPath = mkOption {
         type = types.nullOr types.path;
         default = null;
         example = literalExpression "./dotfiles/agents-claude";
         description = "Path to Claude Code agents directory";
       };
+
+      extraConfig = mkOption {
+        type = types.attrs;
+        default = {};
+        description = "Extra configuration merged into ~/.claude.json";
+      };
     };
 
+    # ========== Qwen Code ==========
     qwenCode = {
       enable = mkEnableOption "Qwen Code";
-      
+
       agentsPath = mkOption {
         type = types.nullOr types.path;
         default = null;
         example = literalExpression "./dotfiles/agents-qwen";
         description = "Path to Qwen Code agents directory";
       };
+
+      extraConfig = mkOption {
+        type = types.attrs;
+        default = {};
+        description = "Extra configuration merged into ~/.qwen/settings.json";
+      };
     };
   };
 
   config = mkIf cfg.enable {
-    # OpenCode configuration
+    # ========== OpenCode Configuration ==========
     programs.opencode = mkIf cfg.opencode.enable {
       enable = true;
       agents = mkAgentsFromDir cfg.opencode.agentsPath;
-      # Don't use settings - we'll manage opencode.json directly via home.file
     };
 
-    # OpenCode files (config + skills)
+    # ========== Home Files ==========
     home.file = mkMerge [
-      # OpenCode config file (opencode.json)
+      # ----- OpenCode config (opencode.json) -----
       (mkIf cfg.opencode.enable {
         ".config/opencode/opencode.json" = {
           text = builtins.toJSON ({
             "$schema" = "https://opencode.ai/config.json";
             plugin = cfg.opencode.plugins;
-          } // (optionalAttrs (cfg.opencode.defaultModel != null) {
+          }
+          // (optionalAttrs (cfg.opencode.defaultModel != null) {
             model = cfg.opencode.defaultModel;
-          }) // cfg.opencode.extraConfig);
+          })
+          // (optionalAttrs (enabledMcpServers != {}) {
+            mcp = mkOpenCodeMcpConfig enabledMcpServers;
+          })
+          // cfg.opencode.extraConfig);
         };
       })
 
-      # Skills configuration (opencode-skills plugin)
-      # Map each skill directory to a flat structure in ~/.config/opencode/skills/
+      # ----- OpenCode skills -----
       (mkIf (cfg.opencode.enable && cfg.opencode.skills.enable && cfg.opencode.skills.sources != []) (
         lib.mkMerge (map (source:
           let
             skillsBase = "${source.package}/${source.skillsDir}";
             skillDirs = builtins.readDir skillsBase;
-            
-            # Filter only directories (each is a skill)
             skills = lib.filterAttrs (name: type: type == "directory") skillDirs;
           in
-            # Create symlink for each skill directory
             lib.mapAttrs' (skillName: type:
               lib.nameValuePair ".config/opencode/skills/${skillName}" {
                 source = skillsBase + "/${skillName}";
@@ -205,9 +258,28 @@ in {
             ) skills
         ) cfg.opencode.skills.sources)
       ))
+
+      # ----- Claude Code config (~/.claude.json) -----
+      (mkIf (cfg.claudeCode.enable && enabledMcpServers != {}) {
+        ".claude.json" = {
+          text = builtins.toJSON ({
+            mcpServers = mkStdioMcpConfig enabledMcpServers;
+          } // cfg.claudeCode.extraConfig);
+        };
+      })
+
+      # ----- Qwen Code config (~/.qwen/settings.json) -----
+      (mkIf (cfg.qwenCode.enable && enabledMcpServers != {}) {
+        ".qwen/settings.json" = {
+          text = builtins.toJSON ({
+            mcpServers = mkStdioMcpConfig enabledMcpServers;
+          } // cfg.qwenCode.extraConfig);
+        };
+      })
     ];
 
-    # Claude Code configuration
+    # ========== Activation Scripts ==========
+    # Claude Code agents symlink
     home.activation.claudeAgents = mkIf (cfg.claudeCode.enable && cfg.claudeCode.agentsPath != null) (
       lib.hm.dag.entryAfter ["writeBoundary"] ''
         $DRY_RUN_CMD mkdir -p $VERBOSE_ARG ${config.home.homeDirectory}/.claude
@@ -216,7 +288,7 @@ in {
       ''
     );
 
-    # Qwen Code configuration  
+    # Qwen Code agents symlink
     home.activation.qwenAgents = mkIf (cfg.qwenCode.enable && cfg.qwenCode.agentsPath != null) (
       lib.hm.dag.entryAfter ["writeBoundary"] ''
         $DRY_RUN_CMD mkdir -p $VERBOSE_ARG ${config.home.homeDirectory}/.qwen

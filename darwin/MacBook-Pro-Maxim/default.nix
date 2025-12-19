@@ -21,8 +21,7 @@
 
   # System packages (installed via Nix)
   environment.systemPackages = [
-    # System-wide packages only
-    # User-specific packages should go in home-manager config
+    pkgs.nix-tree
   ];
 
   # Nix settings
