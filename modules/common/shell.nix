@@ -1,5 +1,6 @@
 # Shell configuration (bash/zsh)
-{ pkgs, ... }: {
+{ pkgs, ... }:
+{
   # Example: enable zsh
   # programs.zsh.enable = true;
 

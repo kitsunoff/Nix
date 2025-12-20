@@ -1,5 +1,6 @@
 # Common packages for all workstations
-{ pkgs, ... }: {
+{ pkgs, ... }:
+{
   environment.systemPackages = with pkgs; [
     # Code editors and development tools
     opencode

@@ -1,5 +1,5 @@
 # macOS system defaults
-{ pkgs, ... }: {
+_: {
   # Example macOS defaults
   # Uncomment to enable
   # system.defaults.dock = {

@@ -1,6 +1,7 @@
 # Linux builder configuration for building Linux packages on macOS
 # Docs: https://nixos.org/manual/nixpkgs/stable/#sec-darwin-builder
-{ config, pkgs, lib, ... }@inputs: {
+{ lib, ... }:
+{
   nix.linux-builder = {
     enable = true;
 

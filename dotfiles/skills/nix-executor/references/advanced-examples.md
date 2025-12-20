@@ -221,23 +221,27 @@ nix-instantiate --eval --strict --show-trace file.nix
 ## Tips and Tricks
 
 1. **Use `--impure` when needed**: For accessing environment variables or current time
+
    ```bash
    nix eval --impure --expr 'builtins.getEnv "HOME"'
    ```
 
-2. **Pretty print with `nix repl`**: For interactive exploration
+1. **Pretty print with `nix repl`**: For interactive exploration
+
    ```bash
    nix repl
    :l <nixpkgs>
    :p lib.version
    ```
 
-3. **Cache evaluation results**: Use `--eval-store` for faster re-evaluation
+1. **Cache evaluation results**: Use `--eval-store` for faster re-evaluation
+
    ```bash
    nix eval --eval-store auto --expr 'expensive-computation'
    ```
 
-4. **Profile evaluation**: Find slow parts of configuration
+1. **Profile evaluation**: Find slow parts of configuration
+
    ```bash
    nix eval --profile ./profile --expr 'import ./config.nix'
    ```

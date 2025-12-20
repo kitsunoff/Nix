@@ -1,7 +1,12 @@
 # AI Code Assistants module
 # Unified configuration for OpenCode, Claude Code, Qwen Code
 # With MCP server support via mcp-servers-nix
-{ config, lib, pkgs, mcp-servers-nix, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 
@@ -9,21 +14,22 @@ let
   cfg = config.programs.aiCodeAssistants;
 
   # Simple helper to create agents attrset from directory
-  mkAgentsFromDir = agentsPath:
-    if agentsPath == null then {}
+  mkAgentsFromDir =
+    agentsPath:
+    if agentsPath == null then
+      { }
     else
       let
         agentFiles = builtins.readDir agentsPath;
-        agentsAttrset = lib.mapAttrs' (name: type:
+        agentsAttrset = lib.mapAttrs' (
+          name: _type:
           let
             agentName = lib.removeSuffix ".md" name;
           in
-            lib.nameValuePair agentName (agentsPath + "/${name}")
-        ) (lib.filterAttrs (name: type:
-          type == "regular" && lib.hasSuffix ".md" name
-        ) agentFiles);
+          lib.nameValuePair agentName (agentsPath + "/${name}")
+        ) (lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".md" name) agentFiles);
       in
-        agentsAttrset;
+      agentsAttrset;
 
   # Built-in MCP servers (auto-configured when enabled)
   builtinMcpServers =
@@ -31,24 +37,24 @@ let
       vibe-kanban = {
         enable = true;
         command = "${pkgs.vibe-kanban}/bin/vibe-kanban-mcp";
-        args = [];
-        env = {};
+        args = [ ];
+        env = { };
       };
     })
     // (optionalAttrs cfg.context7.enable {
       context7 = {
         enable = true;
         command = "${pkgs.context7-mcp}/bin/context7-mcp";
-        args = [];
-        env = {};
+        args = [ ];
+        env = { };
       };
     })
     // (optionalAttrs cfg.nixos.enable {
       nixos = {
         enable = true;
         command = "${pkgs.mcp-nixos}/bin/mcp-nixos";
-        args = [];
-        env = {};
+        args = [ ];
+        env = { };
       };
     });
 
@@ -56,26 +62,35 @@ let
   allMcpServers = builtinMcpServers // cfg.mcpServers;
 
   # Get enabled MCP servers
-  enabledMcpServers = lib.filterAttrs (n: s: s.enable) allMcpServers;
+  enabledMcpServers = lib.filterAttrs (_n: s: s.enable) allMcpServers;
 
   # Convert MCP server config to Claude Code / Qwen Code format
-  mkStdioMcpConfig = servers:
-    lib.mapAttrs (name: srv: {
-      command = srv.command;
-      args = srv.args;
-    } // (optionalAttrs (srv.env != {}) {
-      env = srv.env;
-    })) servers;
+  mkStdioMcpConfig =
+    servers:
+    lib.mapAttrs (
+      _name: srv:
+      {
+        inherit (srv) command args;
+      }
+      // (optionalAttrs (srv.env != { }) {
+        inherit (srv) env;
+      })
+    ) servers;
 
   # Convert MCP server config to OpenCode format
-  mkOpenCodeMcpConfig = servers:
-    lib.mapAttrs (name: srv: {
-      type = "local";
-      command = [ srv.command ] ++ srv.args;
-      enabled = true;
-    } // (optionalAttrs (srv.env != {}) {
-      environment = srv.env;
-    })) servers;
+  mkOpenCodeMcpConfig =
+    servers:
+    lib.mapAttrs (
+      _name: srv:
+      {
+        type = "local";
+        command = [ srv.command ] ++ srv.args;
+        enabled = true;
+      }
+      // (optionalAttrs (srv.env != { }) {
+        environment = srv.env;
+      })
+    ) servers;
 
   # MCP server submodule type
   mcpServerType = types.submodule {
@@ -90,19 +105,20 @@ let
 
       args = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "Arguments for the MCP server command";
       };
 
       env = mkOption {
         type = types.attrsOf types.str;
-        default = {};
+        default = { };
         description = "Environment variables for the MCP server";
       };
     };
   };
 
-in {
+in
+{
   options.programs.aiCodeAssistants = {
     enable = mkEnableOption "AI Code Assistants configuration";
 
@@ -122,7 +138,7 @@ in {
     # ========== Custom MCP Servers ==========
     mcpServers = mkOption {
       type = types.attrsOf mcpServerType;
-      default = {};
+      default = { };
       description = ''
         Additional MCP servers configuration.
         Built-in servers (vibeKanban, context7, nixos) are configured separately.
@@ -150,7 +166,7 @@ in {
 
       plugins = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "List of OpenCode plugins";
       };
 
@@ -162,7 +178,7 @@ in {
 
       extraConfig = mkOption {
         type = types.attrs;
-        default = {};
+        default = { };
         description = "Extra configuration for OpenCode";
       };
 
@@ -170,26 +186,28 @@ in {
         enable = mkEnableOption "opencode-skills plugin";
 
         sources = mkOption {
-          type = types.listOf (types.submodule {
-            options = {
-              name = mkOption {
-                type = types.str;
-                description = "Name of the skills source";
-              };
+          type = types.listOf (
+            types.submodule {
+              options = {
+                name = mkOption {
+                  type = types.str;
+                  description = "Name of the skills source";
+                };
 
-              package = mkOption {
-                type = types.either types.package types.path;
-                description = "Package or path source for skills";
-              };
+                package = mkOption {
+                  type = types.either types.package types.path;
+                  description = "Package or path source for skills";
+                };
 
-              skillsDir = mkOption {
-                type = types.str;
-                default = ".";
-                description = "Path to skills directory inside the package";
+                skillsDir = mkOption {
+                  type = types.str;
+                  default = ".";
+                  description = "Path to skills directory inside the package";
+                };
               };
-            };
-          });
-          default = [];
+            }
+          );
+          default = [ ];
           description = "Skills sources to install";
         };
       };
@@ -207,7 +225,7 @@ in {
 
       extraConfig = mkOption {
         type = types.attrs;
-        default = {};
+        default = { };
         description = "Extra configuration merged into ~/.claude.json";
       };
     };
@@ -224,97 +242,114 @@ in {
 
       extraConfig = mkOption {
         type = types.attrs;
-        default = {};
+        default = { };
         description = "Extra configuration merged into ~/.qwen/settings.json";
       };
     };
   };
 
   config = mkIf cfg.enable {
-    # ========== Packages ==========
-    home.packages = lib.optionals cfg.vibeKanban.enable [ pkgs.vibe-kanban ];
-
     # ========== OpenCode Configuration ==========
     programs.opencode = mkIf cfg.opencode.enable {
       enable = true;
       agents = mkAgentsFromDir cfg.opencode.agentsPath;
     };
 
-    # ========== Home Files ==========
-    home.file = mkMerge [
-      # ----- OpenCode config (opencode.json) -----
-      (mkIf cfg.opencode.enable {
-        ".config/opencode/opencode.json" = {
-          text = builtins.toJSON ({
-            "$schema" = "https://opencode.ai/config.json";
-            plugin = cfg.opencode.plugins;
-          }
-          // (optionalAttrs (cfg.opencode.defaultModel != null) {
-            model = cfg.opencode.defaultModel;
-          })
-          // (optionalAttrs (enabledMcpServers != {}) {
-            mcp = mkOpenCodeMcpConfig enabledMcpServers;
-          })
-          // cfg.opencode.extraConfig);
-        };
-      })
+    # ========== Home Configuration ==========
+    home = {
+      # Packages
+      packages = lib.optionals cfg.vibeKanban.enable [ pkgs.vibe-kanban ];
 
-      # ----- OpenCode skills -----
-      (mkIf (cfg.opencode.enable && cfg.opencode.skills.enable && cfg.opencode.skills.sources != []) (
-        lib.mkMerge (map (source:
-          let
-            skillsBase = "${source.package}/${source.skillsDir}";
-            skillDirs = builtins.readDir skillsBase;
-            skills = lib.filterAttrs (name: type: type == "directory") skillDirs;
-          in
-            lib.mapAttrs' (skillName: type:
-              lib.nameValuePair ".config/opencode/skills/${skillName}" {
-                source = skillsBase + "/${skillName}";
-                recursive = true;
+      # Files
+      file = mkMerge [
+        # ----- OpenCode config (opencode.json) -----
+        (mkIf cfg.opencode.enable {
+          ".config/opencode/opencode.json" = {
+            text = builtins.toJSON (
+              {
+                "$schema" = "https://opencode.ai/config.json";
+                plugin = cfg.opencode.plugins;
               }
-            ) skills
-        ) cfg.opencode.skills.sources)
-      ))
+              // (optionalAttrs (cfg.opencode.defaultModel != null) {
+                model = cfg.opencode.defaultModel;
+              })
+              // (optionalAttrs (enabledMcpServers != { }) {
+                mcp = mkOpenCodeMcpConfig enabledMcpServers;
+              })
+              // cfg.opencode.extraConfig
+            );
+          };
+        })
 
-      # ----- Claude Code MCP config (~/.claude/settings.json) -----
-      # Note: ~/.claude.json is managed by Claude Code itself
-      # We use ~/.claude/settings.json for user MCP servers
-      (mkIf (cfg.claudeCode.enable && enabledMcpServers != {}) {
-        ".claude/settings.json" = {
-          force = true;  # Override existing file
-          text = builtins.toJSON ({
-            mcpServers = mkStdioMcpConfig enabledMcpServers;
-          } // cfg.claudeCode.extraConfig);
-        };
-      })
+        # ----- OpenCode skills -----
+        (mkIf (cfg.opencode.enable && cfg.opencode.skills.enable && cfg.opencode.skills.sources != [ ]) (
+          lib.mkMerge (
+            map (
+              source:
+              let
+                skillsBase = "${source.package}/${source.skillsDir}";
+                skillDirs = builtins.readDir skillsBase;
+                skills = lib.filterAttrs (_name: type: type == "directory") skillDirs;
+              in
+              lib.mapAttrs' (
+                skillName: _type:
+                lib.nameValuePair ".config/opencode/skills/${skillName}" {
+                  source = skillsBase + "/${skillName}";
+                  recursive = true;
+                }
+              ) skills
+            ) cfg.opencode.skills.sources
+          )
+        ))
 
-      # ----- Qwen Code config (~/.qwen/settings.json) -----
-      (mkIf (cfg.qwenCode.enable && enabledMcpServers != {}) {
-        ".qwen/settings.json" = {
-          force = true;  # Override existing file
-          text = builtins.toJSON ({
-            mcpServers = mkStdioMcpConfig enabledMcpServers;
-          } // cfg.qwenCode.extraConfig);
-        };
-      })
-    ];
+        # ----- Claude Code MCP config (~/.claude/settings.json) -----
+        # Note: ~/.claude.json is managed by Claude Code itself
+        # We use ~/.claude/settings.json for user MCP servers
+        (mkIf (cfg.claudeCode.enable && enabledMcpServers != { }) {
+          ".claude/settings.json" = {
+            force = true; # Override existing file
+            text = builtins.toJSON (
+              {
+                mcpServers = mkStdioMcpConfig enabledMcpServers;
+              }
+              // cfg.claudeCode.extraConfig
+            );
+          };
+        })
 
-    # ========== Activation Scripts ==========
-    home.activation.claudeAgents = mkIf (cfg.claudeCode.enable && cfg.claudeCode.agentsPath != null) (
-      lib.hm.dag.entryAfter ["writeBoundary"] ''
-        $DRY_RUN_CMD mkdir -p $VERBOSE_ARG ${config.home.homeDirectory}/.claude
-        $DRY_RUN_CMD rm -rf $VERBOSE_ARG ${config.home.homeDirectory}/.claude/agents
-        $DRY_RUN_CMD ln -sf $VERBOSE_ARG ${cfg.claudeCode.agentsPath} ${config.home.homeDirectory}/.claude/agents
-      ''
-    );
+        # ----- Qwen Code config (~/.qwen/settings.json) -----
+        (mkIf (cfg.qwenCode.enable && enabledMcpServers != { }) {
+          ".qwen/settings.json" = {
+            force = true; # Override existing file
+            text = builtins.toJSON (
+              {
+                mcpServers = mkStdioMcpConfig enabledMcpServers;
+              }
+              // cfg.qwenCode.extraConfig
+            );
+          };
+        })
+      ];
 
-    home.activation.qwenAgents = mkIf (cfg.qwenCode.enable && cfg.qwenCode.agentsPath != null) (
-      lib.hm.dag.entryAfter ["writeBoundary"] ''
-        $DRY_RUN_CMD mkdir -p $VERBOSE_ARG ${config.home.homeDirectory}/.qwen
-        $DRY_RUN_CMD rm -rf $VERBOSE_ARG ${config.home.homeDirectory}/.qwen/agents
-        $DRY_RUN_CMD ln -sf $VERBOSE_ARG ${cfg.qwenCode.agentsPath} ${config.home.homeDirectory}/.qwen/agents
-      ''
-    );
+      # Activation Scripts
+      activation = {
+        claudeAgents = mkIf (cfg.claudeCode.enable && cfg.claudeCode.agentsPath != null) (
+          lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            $DRY_RUN_CMD mkdir -p $VERBOSE_ARG ${config.home.homeDirectory}/.claude
+            $DRY_RUN_CMD rm -rf $VERBOSE_ARG ${config.home.homeDirectory}/.claude/agents
+            $DRY_RUN_CMD ln -sf $VERBOSE_ARG ${cfg.claudeCode.agentsPath} ${config.home.homeDirectory}/.claude/agents
+          ''
+        );
+
+        qwenAgents = mkIf (cfg.qwenCode.enable && cfg.qwenCode.agentsPath != null) (
+          lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            $DRY_RUN_CMD mkdir -p $VERBOSE_ARG ${config.home.homeDirectory}/.qwen
+            $DRY_RUN_CMD rm -rf $VERBOSE_ARG ${config.home.homeDirectory}/.qwen/agents
+            $DRY_RUN_CMD ln -sf $VERBOSE_ARG ${cfg.qwenCode.agentsPath} ${config.home.homeDirectory}/.qwen/agents
+          ''
+        );
+      };
+    };
   };
 
   meta.maintainers = [ ];

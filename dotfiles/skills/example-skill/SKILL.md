@@ -1,8 +1,6 @@
----
-name: example-skill
-description: An example skill demonstrating the format for opencode-skills plugin
-license: MIT
----
+______________________________________________________________________
+
+## name: example-skill description: An example skill demonstrating the format for opencode-skills plugin license: MIT
 
 # Example Skill
 
@@ -17,8 +15,8 @@ This skill helps you understand how to create your own skills for OpenCode.
 When this skill is activated, you should:
 
 1. Read the supporting documentation in `references/guide.md`
-2. Use the helper script in `scripts/helper.sh` if needed
-3. Follow the guidelines below
+1. Use the helper script in `scripts/helper.sh` if needed
+1. Follow the guidelines below
 
 ## Guidelines
 
@@ -30,6 +28,7 @@ When this skill is activated, you should:
 ## Supporting Files
 
 You can reference supporting files like:
+
 - `references/guide.md` - Additional documentation
 - `scripts/helper.sh` - Executable scripts
 - `assets/template.html` - Files used in output

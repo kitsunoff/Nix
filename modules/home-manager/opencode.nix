@@ -1,19 +1,24 @@
 # OpenCode home-manager module extension
 # Extends built-in home-manager opencode module with additional features
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  ...
+}:
 
 with lib;
 
 let
   cfg = config.programs.opencode;
 
-in {
+in
+{
   # Add custom options to the existing programs.opencode
   options.programs.opencode = {
     # Custom option: simple plugins list
     plugins = mkOption {
       type = types.listOf types.str;
-      default = [];
+      default = [ ];
       example = [ "opencode-alibaba-qwen3-auth" ];
       description = ''
         List of OpenCode plugins (convenience option).
@@ -47,7 +52,7 @@ in {
     # Custom option: extra config merged into settings
     extraConfig = mkOption {
       type = types.attrs;
-      default = {};
+      default = { };
       example = {
         theme = "dark";
         autoSave = true;
@@ -62,15 +67,15 @@ in {
     # Merge our custom options into the built-in settings
     programs.opencode.settings = mkMerge [
       # Add plugins to settings.plugin
-      (mkIf (cfg.plugins != []) {
+      (mkIf (cfg.plugins != [ ]) {
         plugin = cfg.plugins;
       })
-      
+
       # Add defaultModel to settings.model
       (mkIf (cfg.defaultModel != null) {
         model = cfg.defaultModel;
       })
-      
+
       # Merge extraConfig
       cfg.extraConfig
     ];
@@ -81,20 +86,19 @@ in {
       let
         # List all files in the agents directory
         agentFiles = builtins.readDir cfg.agentsPath;
-        
+
         # Filter only .md files and create attrset
         # { "agent-name.md" = "regular"; } -> { agent-name = ./path/agent-name.md; }
-        agentsAttrset = lib.mapAttrs' (name: type:
+        agentsAttrset = lib.mapAttrs' (
+          name: _type:
           let
             # Remove .md extension from filename
             agentName = lib.removeSuffix ".md" name;
           in
-            lib.nameValuePair agentName (cfg.agentsPath + "/${name}")
-        ) (lib.filterAttrs (name: type: 
-          type == "regular" && lib.hasSuffix ".md" name
-        ) agentFiles);
+          lib.nameValuePair agentName (cfg.agentsPath + "/${name}")
+        ) (lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".md" name) agentFiles);
       in
-        mkForce agentsAttrset
+      mkForce agentsAttrset
     );
   };
 

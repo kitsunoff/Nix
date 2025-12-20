@@ -10,8 +10,8 @@ echo "🔍 Fetching latest superpowers from GitHub..."
 NEW_HASH=$(nix-prefetch-url --unpack https://github.com/obra/superpowers/archive/refs/heads/main.tar.gz 2>/dev/null | tail -n1)
 
 if [ -z "$NEW_HASH" ]; then
-    echo "❌ Failed to fetch hash"
-    exit 1
+  echo "❌ Failed to fetch hash"
+  exit 1
 fi
 
 echo "✅ New hash: $NEW_HASH"

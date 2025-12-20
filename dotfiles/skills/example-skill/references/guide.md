@@ -7,8 +7,8 @@ This is a supporting file that the skill can reference.
 Skills follow Anthropic's Skills Specification v1.0:
 
 1. Create a directory with your skill name (lowercase-with-hyphens)
-2. Add a `SKILL.md` file with YAML frontmatter
-3. Add supporting files in subdirectories (references/, scripts/, assets/)
+1. Add a `SKILL.md` file with YAML frontmatter
+1. Add supporting files in subdirectories (references/, scripts/, assets/)
 
 ## Frontmatter Requirements
 

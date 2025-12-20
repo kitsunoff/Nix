@@ -1,9 +1,10 @@
 # Vibe Kanban - Local kanban board for AI agents
 # https://www.vibekanban.com
-{ lib
-, stdenv
-, makeWrapper
-, nodejs
+{
+  lib,
+  stdenv,
+  makeWrapper,
+  nodejs,
 }:
 
 stdenv.mkDerivation {

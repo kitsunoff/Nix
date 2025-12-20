@@ -76,6 +76,7 @@ ls ~/.claude/agents/
 ### Проверка в приложениях
 
 #### OpenCode
+
 ```bash
 # Запустите OpenCode
 opencode
@@ -87,6 +88,7 @@ opencode
 ```
 
 #### Claude Code
+
 ```bash
 # Откройте Claude Code
 # Используйте команду /agents или упомяните агента:
@@ -94,6 +96,7 @@ opencode
 ```
 
 #### Qwen Code
+
 ```bash
 # Откройте Qwen Code
 # Используйте команду /agents или упомяните агента:
@@ -189,8 +192,8 @@ journalctl --user -u home-manager-kitsunoff -n 50
 ### Агенты не видны в приложении
 
 1. Перезапустите приложение
-2. Проверьте формат `.md` файлов (YAML frontmatter корректный?)
-3. Проверьте права доступа:
+1. Проверьте формат `.md` файлов (YAML frontmatter корректный?)
+1. Проверьте права доступа:
    ```bash
    ls -la ~/my-nixos/dotfiles/agents/
    # Должны быть readable
@@ -201,10 +204,12 @@ journalctl --user -u home-manager-kitsunoff -n 50
 Если вы редактируете агентов в `dotfiles/agents/`, изменения видны сразу через симлинки. Пересборка не требуется!
 
 Но если вы:
+
 - Добавили новый `.md` файл
 - Изменили конфигурацию в `home/kitsunoff.nix`
 
 Тогда нужен rebuild:
+
 ```bash
 darwin-rebuild switch --flake .#MacBook-Pro-Maxim
 ```
@@ -224,9 +229,9 @@ darwin-rebuild switch --flake .#MacBook-Pro-Maxim --switch-generation 42
 ## Следующие шаги
 
 1. Прочитайте [AI_ASSISTANTS.md](modules/home-manager/AI_ASSISTANTS.md) для деталей
-2. Настройте git (обновите email в `home/kitsunoff.nix`)
-3. Добавьте свои агенты в `dotfiles/agents/`
-4. Экспериментируйте с настройками OpenCode в `home/kitsunoff.nix`
+1. Настройте git (обновите email в `home/kitsunoff.nix`)
+1. Добавьте свои агенты в `dotfiles/agents/`
+1. Экспериментируйте с настройками OpenCode в `home/kitsunoff.nix`
 
 ## Полезные команды
 

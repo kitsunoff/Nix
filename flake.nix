@@ -13,56 +13,160 @@
     # MCP servers for AI assistants (Claude Code, OpenCode, Qwen Code)
     mcp-servers-nix.url = "github:natsukium/mcp-servers-nix";
     mcp-servers-nix.inputs.nixpkgs.follows = "nixpkgs";
+
+    # Formatting and linting
+    treefmt-nix.url = "github:numtide/treefmt-nix";
+    treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
+
+    git-hooks.url = "github:cachix/git-hooks.nix";
+    git-hooks.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = inputs@{ self, nix-darwin, nixpkgs, home-manager, mcp-servers-nix }: {
-    # Darwin (macOS) configurations
-    darwinConfigurations = {
-      "MacBook-Pro-Maxim" = nix-darwin.lib.darwinSystem {
-        modules = [ 
-          ./darwin/MacBook-Pro-Maxim
-          
-          # Home Manager integration for Darwin
-          # Add overlays (MCP servers + custom packages)
-          ({ ... }: {
-            nixpkgs.overlays = [
-              mcp-servers-nix.overlays.default
-              # Custom packages overlay
-              (final: prev: import "${self}/pkgs" { pkgs = final; })
-            ];
-          })
+  outputs =
+    inputs@{
+      self,
+      nix-darwin,
+      nixpkgs,
+      home-manager,
+      mcp-servers-nix,
+      treefmt-nix,
+      git-hooks,
+    }:
+    let
+      # Supported systems
+      systems = [
+        "aarch64-darwin"
+        "x86_64-darwin"
+        "aarch64-linux"
+        "x86_64-linux"
+      ];
+      forAllSystems = nixpkgs.lib.genAttrs systems;
 
-          home-manager.darwinModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.users.kitsunoff = import ./home/kitsunoff.nix;
+      # Nixpkgs for each system
+      pkgsFor =
+        system:
+        import nixpkgs {
+          inherit system;
+          overlays = [
+            mcp-servers-nix.overlays.default
+            (final: _prev: import ./pkgs { pkgs = final; })
+          ];
+        };
 
-            # Pass inputs to home-manager modules
-            home-manager.extraSpecialArgs = {
-              inherit inputs;
-              mcp-servers-nix = mcp-servers-nix;
-            };
-          }
-        ];
+      # Treefmt configuration
+      treefmtEval = system: treefmt-nix.lib.evalModule (pkgsFor system) ./treefmt.nix;
+
+      # Pre-commit hooks configuration
+      preCommitCheck =
+        system:
+        git-hooks.lib.${system}.run {
+          src = ./.;
+          hooks = {
+            # Nix formatting (use nixfmt directly, treefmt has issues with pre-commit)
+            nixfmt-rfc-style.enable = true;
+
+            # Nix linting
+            statix.enable = true;
+
+            # Find dead code
+            deadnix.enable = true;
+          };
+        };
+    in
+    {
+      # Darwin (macOS) configurations
+      darwinConfigurations = {
+        "MacBook-Pro-Maxim" = nix-darwin.lib.darwinSystem {
+          modules = [
+            ./darwin/MacBook-Pro-Maxim
+
+            # Add overlays (MCP servers + custom packages)
+            (_: {
+              nixpkgs.overlays = [
+                mcp-servers-nix.overlays.default
+                (final: _prev: import "${self}/pkgs" { pkgs = final; })
+              ];
+            })
+
+            home-manager.darwinModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                users.kitsunoff = import ./home/kitsunoff.nix;
+                extraSpecialArgs = {
+                  inherit inputs mcp-servers-nix;
+                };
+              };
+            }
+          ];
+        };
       };
-    };
 
-    # NixOS configurations
-    # nixosConfigurations = {
-    #   "hostname" = nixpkgs.lib.nixosSystem {
-    #     modules = [ 
-    #       ./nixos/hostname
-    #       
-    #       # Home Manager integration for NixOS
-    #       home-manager.nixosModules.home-manager
-    #       {
-    #         home-manager.useGlobalPkgs = true;
-    #         home-manager.useUserPackages = true;
-    #         home-manager.users.username = import ./home/username.nix;
-    #       }
-    #     ];
-    #   };
-    # };
-  };
+      # Formatter for `nix fmt`
+      formatter = forAllSystems (system: (treefmtEval system).config.build.wrapper);
+
+      # Pre-commit checks
+      checks = forAllSystems (system: {
+        pre-commit-check = preCommitCheck system;
+        formatting = (treefmtEval system).config.build.check self;
+      });
+
+      # Development shell with tools
+      devShells = forAllSystems (
+        system:
+        let
+          pkgs = pkgsFor system;
+        in
+        {
+          default = pkgs.mkShell {
+            name = "my-nixos-dev";
+
+            packages = with pkgs; [
+              # Nix tools
+              nil # Nix LSP
+              nixd # Alternative Nix LSP
+              statix # Nix linter
+              deadnix # Find dead code
+              nix-tree # Explore nix store
+
+              # Formatting
+              (treefmtEval system).config.build.wrapper
+
+              # Git
+              git
+
+              # Useful utilities
+              jq
+              yq-go
+            ];
+
+            shellHook = ''
+              ${(preCommitCheck system).shellHook}
+              echo ""
+              echo "Development shell loaded!"
+              echo "  nix fmt        - format code"
+              echo "  nix flake check - run all checks"
+              echo "  Pre-commit hooks are installed"
+              echo ""
+            '';
+          };
+        }
+      );
+
+      # NixOS configurations (commented out template)
+      # nixosConfigurations = {
+      #   "hostname" = nixpkgs.lib.nixosSystem {
+      #     modules = [
+      #       ./nixos/hostname
+      #       home-manager.nixosModules.home-manager
+      #       {
+      #         home-manager.useGlobalPkgs = true;
+      #         home-manager.useUserPackages = true;
+      #         home-manager.users.username = import ./home/username.nix;
+      #       }
+      #     ];
+      #   };
+      # };
+    };
 }

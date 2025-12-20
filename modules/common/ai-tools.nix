@@ -1,6 +1,11 @@
 # AI Tools configuration - prompts and agents
 # Работает на macOS (Darwin) и NixOS
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 let
   # Путь к промптам и агентам в репозитории
@@ -9,13 +14,13 @@ let
   agentsPath = "${dotfilesPath}/agents";
 
   # Определяем имя пользователя в зависимости от платформы
-  username = if pkgs.stdenv.isDarwin
-    then config.system.primaryUser or (builtins.getEnv "USER")
-    else builtins.getEnv "USER";
+  username =
+    if pkgs.stdenv.isDarwin then
+      config.system.primaryUser or (builtins.getEnv "USER")
+    else
+      builtins.getEnv "USER";
 
-  homeDir = if pkgs.stdenv.isDarwin
-    then "/Users/${username}"
-    else "/home/${username}";
+  homeDir = if pkgs.stdenv.isDarwin then "/Users/${username}" else "/home/${username}";
 
   # Скрипт для создания симлинков
   setupScript = ''
@@ -38,7 +43,8 @@ let
     echo "✓ AI tools prompts and agents synced from ${dotfilesPath}"
   '';
 
-in {
+in
+{
   # Works on both Darwin and NixOS
   system.activationScripts.extraActivation.text = lib.mkAfter setupScript;
 }

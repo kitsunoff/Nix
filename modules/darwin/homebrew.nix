@@ -1,5 +1,5 @@
 # Homebrew configuration for macOS
-{ ... }: {
+_: {
   # Enable Homebrew
   homebrew = {
     enable = true;
@@ -12,10 +12,10 @@
     };
 
     # Homebrew taps
-    taps = [];
+    taps = [ ];
 
     # Homebrew formulas (CLI tools)
-    brews = [];
+    brews = [ ];
 
     # Homebrew casks (GUI applications)
     casks = [

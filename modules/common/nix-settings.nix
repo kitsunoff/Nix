@@ -1,5 +1,5 @@
 # Common Nix settings for all systems
-{ ... }: {
+_: {
   nix.settings = {
     experimental-features = "nix-command flakes";
 
