@@ -182,35 +182,17 @@ in
         description = "Extra configuration for OpenCode";
       };
 
-      skills = {
-        enable = mkEnableOption "opencode-skills plugin";
-
-        sources = mkOption {
-          type = types.listOf (
-            types.submodule {
-              options = {
-                name = mkOption {
-                  type = types.str;
-                  description = "Name of the skills source";
-                };
-
-                package = mkOption {
-                  type = types.either types.package types.path;
-                  description = "Package or path source for skills";
-                };
-
-                skillsDir = mkOption {
-                  type = types.str;
-                  default = ".";
-                  description = "Path to skills directory inside the package";
-                };
-              };
-            }
-          );
-          default = [ ];
-          description = "Skills sources to install";
-        };
-      };
+      # Native OpenCode skills (placed in ~/.opencode/skill/)
+    skillsPath = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      description = ''
+        Path to directory containing native OpenCode skills.
+        Each subdirectory should contain a SKILL.md file with YAML frontmatter.
+        Skills will be symlinked to ~/.opencode/skill/
+      '';
+      example = literalExpression "./dotfiles/skills";
+    };
     };
 
     # ========== Claude Code ==========
@@ -281,25 +263,19 @@ in
           };
         })
 
-        # ----- OpenCode skills -----
-        (mkIf (cfg.opencode.enable && cfg.opencode.skills.enable && cfg.opencode.skills.sources != [ ]) (
-          lib.mkMerge (
-            map (
-              source:
-              let
-                skillsBase = "${source.package}/${source.skillsDir}";
-                skillDirs = builtins.readDir skillsBase;
-                skills = lib.filterAttrs (_name: type: type == "directory") skillDirs;
-              in
-              lib.mapAttrs' (
-                skillName: _type:
-                lib.nameValuePair ".config/opencode/skills/${skillName}" {
-                  source = skillsBase + "/${skillName}";
-                  recursive = true;
-                }
-              ) skills
-            ) cfg.opencode.skills.sources
-          )
+        # ----- OpenCode native skills (symlink to ~/.opencode/skill/) -----
+        (mkIf (cfg.opencode.enable && cfg.opencode.skillsPath != null) (
+          let
+            skillDirs = builtins.readDir cfg.opencode.skillsPath;
+            skills = lib.filterAttrs (_name: type: type == "directory") skillDirs;
+          in
+          lib.mapAttrs' (
+            skillName: _type:
+            lib.nameValuePair ".opencode/skill/${skillName}" {
+              source = cfg.opencode.skillsPath + "/${skillName}";
+              recursive = true;
+            }
+          ) skills
         ))
 
         # ----- Claude Code MCP config (~/.claude/settings.json) -----

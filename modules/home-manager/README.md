@@ -139,11 +139,11 @@ config = mkIf cfg.enable {
 
 ### Основные возможности
 
-#### 1. Управление плагинами и skills
+#### 1. Native OpenCode Skills (ДЕКЛАРАТИВНО через Nix!)
 
-Для OpenCode поддерживается автоматическая установка плагинов и множественных источников skills из Git-репозиториев.
+OpenCode 1.0+ поддерживает нативные skills через директорию `~/.opencode/skill/`. Модуль автоматически создаёт symlinks из вашей dotfiles директории.
 
-**Superpowers Plugin + Skills** (ДЕКЛАРАТИВНО через Nix!):
+**Конфигурация:**
 
 ```nix
 programs.aiCodeAssistants = {
@@ -152,131 +152,76 @@ programs.aiCodeAssistants = {
   opencode = {
     enable = true;
     
-    # Superpowers plugin + skills - ПОЛНОСТЬЮ ДЕКЛАРАТИВНО!
-    superpowers = {
-      enable = true;  # Включить superpowers плагин
-      
-      # Явно указываем какие skills устанавливать
-      skills = [
-        # Официальные superpowers skills
-        {
-          name = "superpowers";
-          package = pkgs.fetchFromGitHub {
-            owner = "obra";
-            repo = "superpowers";
-            rev = "main";
-            sha256 = "sha256-...";
-          };
-          skillsDir = "skills";
-        }
-      ];
-      
-      # Опционально: указать конкретную версию плагина
-      # package = pkgs.fetchFromGitHub {
-      #   owner = "obra";
-      #   repo = "superpowers";
-      #   rev = "abc123...";  # Конкретный commit для воспроизводимости
-      #   sha256 = "sha256-...";  # Hash для проверки целостности
-      # };
-    };
+    # Путь к директории со skills
+    # Каждая поддиректория должна содержать SKILL.md с YAML frontmatter
+    skillsPath = ../dotfiles/skills;
   };
 };
 ```
 
-**Что происходит при включении superpowers** (ДЕКЛАРАТИВНО!):
+**Формат SKILL.md (нативный OpenCode):**
 
-1. Nix скачивает superpowers в `/nix/store/...` (с фиксированным SHA256 hash)
-1. Home Manager создаёт symlinks:
-   - `~/.config/opencode/plugin/superpowers.js -> /nix/store/.../superpowers/.opencode/plugin/superpowers.js`
-   - `~/.config/opencode/skills/superpowers/ -> /nix/store/.../superpowers/skills/` (если добавлено в `skills`)
-1. **Явный контроль** - вы выбираете какие skills устанавливать
-1. **Полностью воспроизводимо** - одинаковый hash = одинаковые файлы на всех машинах
-1. **Нет императивных команд** - всё через Nix деривации
+```markdown
+---
+name: my-skill
+description: Brief description of when to use this skill
+license: MIT
+---
 
-#### 2. Множественные источники Skills (ДЕКЛАРАТИВНО!)
+# My Skill
 
-Вы можете установить несколько источников skills одновременно:
-
-```nix
-programs.aiCodeAssistants.opencode.superpowers = {
-  enable = true;
-  
-  # Список всех skills источников
-  skills = [
-    # Официальные superpowers skills
-    {
-      name = "superpowers";
-      package = pkgs.fetchFromGitHub {
-        owner = "obra";
-        repo = "superpowers";
-        rev = "main";
-        sha256 = "sha256-...";
-      };
-      skillsDir = "skills";
-    }
-    
-    # Ваши кастомные skills
-    {
-      name = "my-custom-skills";
-      package = pkgs.fetchFromGitHub {
-        owner = "your-username";
-        repo = "my-skills";
-        rev = "main";
-        sha256 = "sha256-...";
-      };
-      skillsDir = "skills";  # Путь к skills внутри репозитория
-    }
-    
-    # Корпоративные/командные skills
-    {
-      name = "company-standards";
-      package = pkgs.fetchFromGitHub {
-        owner = "company-org";
-        repo = "ai-skills";
-        rev = "v1.2.0";
-        sha256 = "sha256-...";
-      };
-      skillsDir = "opencode/skills";
-    }
-    
-    # Локальные skills для разработки
-    {
-      name = "local-dev";
-      package = /Users/username/dev/my-skills;
-      skillsDir = ".";
-    }
-  ];
-};
+Instructions and guidelines...
 ```
 
-**Структура после установки:**
+**Требования к имени skill:**
+- 1-64 символа
+- Только lowercase буквы, цифры и одиночные дефисы
+- Не может начинаться или заканчиваться на `-`
+- Не может содержать `--`
+- Имя должно совпадать с именем директории
+
+**Структура директории skills:**
 
 ```
-~/.config/opencode/skills/
-├── superpowers/ -> /nix/store/xxx-superpowers/skills/
-├── my-custom-skills/ -> /nix/store/yyy-my-skills/skills/
-├── company-standards/ -> /nix/store/zzz-company/opencode/skills/
-└── local-dev/ -> /Users/username/dev/my-skills/
+dotfiles/skills/
+├── business-analyst/
+│   └── SKILL.md
+├── code-reviewer/
+│   └── SKILL.md
+├── product-vision/
+│   └── SKILL.md
+├── technical-architect/
+│   └── SKILL.md
+└── task-decomposition/
+    └── SKILL.md
 ```
 
-**Приоритет skills (от высшего к низшему):**
+**После активации Home Manager:**
 
-1. **Project skills** (`.opencode/skills/`) - ВЫСШИЙ приоритет
-1. **Personal skills** (`~/.config/opencode/skills/`)
-1. **Installed skills** (в порядке списка `skills`)
-   - Первый в списке имеет приоритет над следующими
+```
+~/.opencode/skill/
+├── business-analyst/ -> /nix/store/.../skills/business-analyst/
+├── code-reviewer/ -> /nix/store/.../skills/code-reviewer/
+└── ...
+```
 
 **Использование в OpenCode:**
 
 ```
-# OpenCode автоматически находит skills из всех источников
-use_skill "superpowers:test-driven-development"
-use_skill "my-custom-skills:my-skill"
-use_skill "company-standards:code-review"
-use_skill "local-dev:experimental-skill"
+# OpenCode автоматически обнаруживает skills
+# Они доступны через нативный skill tool
+skill({ name: "code-reviewer" })
+skill({ name: "business-analyst" })
 ```
 
-#### 3. Управление агентами для разных AI-ассистентов
+**Преимущества нативных skills над плагинами:**
+
+✅ **Официальная поддержка** - встроенная функциональность OpenCode
+✅ **YAML frontmatter** - чистый и понятный формат
+✅ **Автоматическое обнаружение** - skills появляются в tool description
+✅ **Контроль permissions** - можно настраивать доступ через opencode.json
+
+#### 2. Управление агентами для разных AI-ассистентов
 
 ```nix
 programs.aiCodeAssistants = {
@@ -284,7 +229,8 @@ programs.aiCodeAssistants = {
   
   opencode = {
     enable = true;
-    agentsPath = ../dotfiles/agents;
+    agentsPath = ../dotfiles/agents;        # OpenCode agents
+    skillsPath = ../dotfiles/skills;         # Native OpenCode skills
     plugins = [ "opencode-alibaba-qwen3-auth" ];
     defaultModel = "alibaba/coder-model";
   };
@@ -303,120 +249,56 @@ programs.aiCodeAssistants = {
 };
 ```
 
-### Как работает установка superpowers (декларативно!)
+### Как работает установка skills (декларативно!)
 
-Модуль использует `home.file` для создания symlink из Nix store:
+Модуль использует `home.file` для создания symlinks:
 
 ```nix
 # Декларативный подход - НЕТ императивных команд!
-home.file.".config/opencode/plugin/superpowers.js" = {
-  source = "${cfg.opencode.superpowers.package}/.opencode/plugin/superpowers.js";
+# Для каждой skill директории создаётся symlink:
+home.file.".opencode/skill/${skillName}" = {
+  source = cfg.opencode.skillsPath + "/${skillName}";
+  recursive = true;
 };
-
-# где cfg.opencode.superpowers.package это:
-pkgs.fetchFromGitHub {
-  owner = "obra";
-  repo = "superpowers";
-  rev = "main";
-  sha256 = "sha256-160bw8z5dhbjvz2359j9jqbiif9lwzvliqbs5amrvjk6yw6msdfp";
-}
 ```
 
-**Почему это лучше императивного `git clone`**:
+**Почему это лучше ручной установки**:
 
-❌ **Императивный подход** (`git clone`, `git pull`):
+✅ **Декларативный подход** (Nix):
 
-- Не воспроизводимо (разные версии на разных машинах)
-- Зависит от состояния файловой системы
-- Может сломаться при конфликтах git
-- Нужно вручную управлять обновлениями
-
-✅ **Декларативный подход** (Nix deмривации):
-
-- **Полностью воспроизводимо** - фиксированный SHA256 hash
-- **Чистая функция** - одинаковый вход = одинаковый выход
+- **Полностью воспроизводимо** - одинаковые файлы на всех машинах
 - **Атомарные обновления** - нет частично обновлённых состояний
 - **Откат изменений** - через `home-manager generations`
 - **Кеширование** - Nix переиспользует `/nix/store`
 
-### Обновление superpowers до новой версии
+### Добавление новых skills
 
-Чтобы обновить superpowers до новой версии:
+Чтобы добавить новый skill:
 
-```bash
-# 1. Получить новый hash для последнего main
-nix-prefetch-url --unpack https://github.com/obra/superpowers/archive/refs/heads/main.tar.gz
+1. Создайте директорию в `dotfiles/skills/my-skill/`
+2. Создайте файл `SKILL.md` с YAML frontmatter:
 
-# 2. Обновить sha256 в конфигурации
-# modules/home-manager/ai-code-assistants.nix:
-#   sha256 = "sha256-НОВЫЙ_ХЭШ";
+```markdown
+---
+name: my-skill
+description: Brief description of when to use this skill
+license: MIT
+---
 
-# 3. Применить конфигурацию
-home-manager switch
+# My Skill
+
+Your skill instructions here...
 ```
 
-**Или закрепить конкретную версию** (рекомендуется для стабильности):
+3. Примените конфигурацию: `darwin-rebuild switch --flake .`
 
-```nix
-opencode.superpowers = {
-  enable = true;
-  package = pkgs.fetchFromGitHub {
-    owner = "obra";
-    repo = "superpowers";
-    rev = "abc123def456...";  # Конкретный commit hash
-    sha256 = "sha256-...";     # Hash для этого коммита
-  };
-};
-```
+### Преимущества нативных skills
 
-### Использование fork или local development
-
-```nix
-# Ваш форк
-opencode.superpowers = {
-  enable = true;
-  package = pkgs.fetchFromGitHub {
-    owner = "your-username";
-    repo = "superpowers";
-    rev = "my-feature-branch";
-    sha256 = "sha256-...";
-  };
-};
-
-# Локальная разработка (для тестирования изменений)
-opencode.superpowers = {
-  enable = true;
-  package = /path/to/local/superpowers;  # Абсолютный путь
-};
-```
-
-### Преимущества такого подхода
-
-✅ **Декларативность** - вся конфигурация в одном месте\
-✅ **Автоматическое обновление** - `git pull` при каждом `home-manager switch`\
-✅ **Воспроизводимость** - одинаковая конфигурация на всех машинах\
-✅ **Простота** - не нужно помнить команды установки\
-✅ **Расширяемость** - легко добавить другие плагины по аналогии
-
-### Добавление других плагинов
-
-Чтобы добавить поддержку других плагинов, можно расширить модуль:
-
-```nix
-# В ai-code-assistants.nix
-opencode = {
-  # ... существующие опции
-  
-  myPlugin = {
-    enable = mkEnableOption "My custom plugin";
-    repository = mkOption { ... };
-    rev = mkOption { ... };
-  };
-};
-
-# В config блоке
-home.activation.opencodeMyPlugin = mkIf (cfg.opencode.myPlugin.enable) ...
-```
+✅ **Официальная поддержка** - встроенная функциональность OpenCode 1.0+
+✅ **Простой формат** - YAML frontmatter + Markdown
+✅ **Декларативность** - вся конфигурация в Nix
+✅ **Воспроизводимость** - одинаковая конфигурация на всех машинах
+✅ **Расширяемость** - легко добавить новые skills
 
 ## Создание своих расширений
 

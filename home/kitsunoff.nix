@@ -47,35 +47,12 @@
         agentsPath = ../dotfiles/agents;
         plugins = [
           "opencode-alibaba-qwen3-auth"
-          "opencode-skills" # Skills plugin by malhashemi
         ];
         defaultModel = "alibaba/coder-model";
         extraConfig = { };
 
-        # Skills configuration (opencode-skills plugin)
-        skills = {
-          enable = true;
-          sources = [
-            # Your dotfiles skills
-            {
-              name = "dotfiles";
-              package = ../dotfiles/skills;
-              skillsDir = ".";
-            }
-
-            # Superpowers skills from obra/superpowers
-            {
-              name = "superpowers";
-              package = pkgs.fetchFromGitHub {
-                owner = "obra";
-                repo = "superpowers";
-                rev = "main";
-                sha256 = "sha256-1zVdDfdmyp2rKnrhSPfnNLkYF5ZJpjLE33LBVj7iC5g=";
-              };
-              skillsDir = "skills";
-            }
-          ];
-        };
+        # Native OpenCode skills (uses ~/.opencode/skill/ directory)
+        skillsPath = ../dotfiles/skills;
       };
 
       # ========== Claude Code configuration ==========

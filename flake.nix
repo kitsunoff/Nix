@@ -20,6 +20,10 @@
 
     git-hooks.url = "github:cachix/git-hooks.nix";
     git-hooks.inputs.nixpkgs.follows = "nixpkgs";
+
+    # OpenCode - terminal-based AI assistant (official upstream)
+    opencode.url = "github:sst/opencode/dev";
+    opencode.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
@@ -31,6 +35,8 @@
       mcp-servers-nix,
       treefmt-nix,
       git-hooks,
+      opencode,
+      ...
     }:
     let
       # Supported systems
@@ -50,6 +56,10 @@
           overlays = [
             mcp-servers-nix.overlays.default
             (final: _prev: import ./pkgs { pkgs = final; })
+            # OpenCode from official sst/opencode flake
+            (_final: _prev: {
+              opencode = opencode.packages.${system}.default;
+            })
           ];
         };
 
@@ -80,11 +90,15 @@
           modules = [
             ./darwin/MacBook-Pro-Maxim
 
-            # Add overlays (MCP servers + custom packages)
-            (_: {
+            # Add overlays (MCP servers + custom packages + opencode)
+            ({ pkgs, ... }: {
               nixpkgs.overlays = [
                 mcp-servers-nix.overlays.default
                 (final: _prev: import "${self}/pkgs" { pkgs = final; })
+                # OpenCode from official sst/opencode flake
+                (_final: _prev: {
+                  opencode = opencode.packages.${pkgs.stdenv.hostPlatform.system}.default;
+                })
               ];
             })
 
