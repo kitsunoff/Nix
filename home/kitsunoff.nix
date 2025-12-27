@@ -83,6 +83,16 @@
       };
     };
 
+    # GitHub CLI
+    gh = {
+      enable = true;
+      gitCredentialHelper.enable = true;
+      settings = {
+        git_protocol = "https";
+        editor = "nvim";
+      };
+    };
+
     # Let Home Manager install and manage itself
     home-manager.enable = true;
   };
