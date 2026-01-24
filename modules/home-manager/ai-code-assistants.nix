@@ -240,7 +240,9 @@ in
     # ========== Home Configuration ==========
     home = {
       # Packages
-      packages = lib.optionals cfg.vibeKanban.enable [ pkgs.vibe-kanban ];
+      packages =
+        lib.optionals cfg.vibeKanban.enable [ pkgs.vibe-kanban ]
+        ++ lib.optionals cfg.claudeCode.enable [ pkgs.claude-code ];
 
       # Files
       file = mkMerge [

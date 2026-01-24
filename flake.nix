@@ -168,6 +168,17 @@
         }
       );
 
+      # Standalone Home Manager configurations (for non-NixOS systems like Steam Deck)
+      homeConfigurations = {
+        "deck@steamdeck" = home-manager.lib.homeManagerConfiguration {
+          pkgs = pkgsFor "x86_64-linux";
+          modules = [ ./home/deck.nix ];
+          extraSpecialArgs = {
+            inherit inputs mcp-servers-nix;
+          };
+        };
+      };
+
       # NixOS configurations (commented out template)
       # nixosConfigurations = {
       #   "hostname" = nixpkgs.lib.nixosSystem {
