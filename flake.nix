@@ -173,25 +173,6 @@
         "deck@steamdeck" = home-manager.lib.homeManagerConfiguration {
           pkgs = pkgsFor "x86_64-linux";
           modules = [ ./home/deck.nix ];
-          extraSpecialArgs = {
-            inherit inputs mcp-servers-nix;
-          };
-        };
-      };
-
-      # NixOS configurations (commented out template)
-      # nixosConfigurations = {
-      #   "hostname" = nixpkgs.lib.nixosSystem {
-      #     modules = [
-      #       ./nixos/hostname
-      #       home-manager.nixosModules.home-manager
-      #       {
-      #         home-manager.useGlobalPkgs = true;
-      #         home-manager.useUserPackages = true;
-      #         home-manager.users.username = import ./home/username.nix;
-      #       }
-      #     ];
-      #   };
-      # };
+          extraSpecialArgs = {/
     };
 }
