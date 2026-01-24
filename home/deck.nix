@@ -6,6 +6,9 @@
 }:
 
 {
+  # Allow unfree packages (claude-code)
+  nixpkgs.config.allowUnfree = true;
+
   imports = [
     # Import our custom home-manager modules
     ../modules/home-manager/opencode.nix
