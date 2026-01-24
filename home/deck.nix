@@ -25,6 +25,10 @@
     packages = with pkgs; [
       # VSCode
       vscode
+
+      # Task management
+      beads # AI coding agent memory system with graph-based issue tracking
+      lazybeads # TUI for beads (vim-style navigation)
     ];
   };
 

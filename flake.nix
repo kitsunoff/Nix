@@ -173,6 +173,10 @@
         "deck@steamdeck" = home-manager.lib.homeManagerConfiguration {
           pkgs = pkgsFor "x86_64-linux";
           modules = [ ./home/deck.nix ];
-          extraSpecialArgs = {/
+          extraSpecialArgs = {
+            inherit inputs mcp-servers-nix;
+          };
+        };
+      };
     };
 }
