@@ -93,6 +93,30 @@
             # Add overlays (MCP servers + custom packages + opencode)
             ({ pkgs, ... }: {
               nixpkgs.overlays = [
+                # Fix rocksdict tests failing on Darwin (Trace/BPT trap)
+                # Must come BEFORE mcp-servers-nix to affect its dependencies
+                (final: prev: {
+                  python313Packages = prev.python313Packages.overrideScope (
+                    _pyFinal: pyPrev: {
+                      rocksdict = pyPrev.rocksdict.overridePythonAttrs (_old: {
+                        doCheck = false;
+                      });
+                       py-key-value-aio = pyPrev.py-key-value-aio.overridePythonAttrs (_old: {
+                        doCheck = false;
+                      });
+                    }
+                  );
+                  python312Packages = prev.python312Packages.overrideScope (
+                    _pyFinal: pyPrev: {
+                      rocksdict = pyPrev.rocksdict.overridePythonAttrs (_old: {
+                        doCheck = false;
+                      });
+                      py-key-value-aio = pyPrev.py-key-value-aio.overridePythonAttrs (_old: {
+                        doCheck = false;
+                      });
+                    }
+                  );
+                })
                 mcp-servers-nix.overlays.default
                 (final: _prev: import "${self}/pkgs" { pkgs = final; })
                 # OpenCode from official sst/opencode flake

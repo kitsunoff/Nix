@@ -12,7 +12,7 @@
 
     # Note: OpenCode configuration moved to home-manager (home/kitsunoff.nix)
   ];
-
+  nixpkgs.config.allowUnfree = true;
   # Networking
   networking = {
     hostName = "MacBook-Pro-Maxim";
