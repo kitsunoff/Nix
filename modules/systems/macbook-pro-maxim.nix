@@ -63,6 +63,7 @@ in
         home-manager = {
           useGlobalPkgs = true;
           useUserPackages = true;
+          backupFileExtension = "backup";
 
           users.kitsunoff = {
             imports = [
@@ -77,7 +78,6 @@ in
               packages = [ ];
             };
 
-            nixpkgs.config.allowUnfree = true;
 
             # AI assistants configuration
             programs.aiCodeAssistants = {
