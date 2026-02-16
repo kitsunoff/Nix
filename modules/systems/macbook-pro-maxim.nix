@@ -99,6 +99,7 @@ in
               claudeCode = {
                 enable = true;
                 agentsPath = ../../dotfiles/agents-claude;
+                claudeMdPath = ../../dotfiles/CLAUDE.md;
               };
 
               qwenCode = {

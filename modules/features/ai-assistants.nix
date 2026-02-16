@@ -206,6 +206,16 @@
             description = "Path to Claude Code agents directory";
           };
 
+          claudeMdPath = mkOption {
+            type = types.nullOr types.path;
+            default = null;
+            description = ''
+              Path to CLAUDE.md file for global instructions.
+              Will be symlinked to ~/.claude/CLAUDE.md
+            '';
+            example = literalExpression "./dotfiles/CLAUDE.md";
+          };
+
           extraConfig = mkOption {
             type = types.attrs;
             default = { };
@@ -288,6 +298,11 @@
                   // cfg.claudeCode.extraConfig
                 );
               };
+            })
+
+            # ----- Claude Code global CLAUDE.md (~/.claude/CLAUDE.md) -----
+            (mkIf (cfg.claudeCode.enable && cfg.claudeCode.claudeMdPath != null) {
+              ".claude/CLAUDE.md".source = cfg.claudeCode.claudeMdPath;
             })
 
             # ----- Qwen Code config (~/.qwen/settings.json) -----
