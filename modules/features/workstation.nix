@@ -6,6 +6,8 @@
     { pkgs, ... }:
     {
       environment.systemPackages = with pkgs; [
+        fzf
+        jq
         opencode
         qwen-code
       ];
@@ -16,6 +18,8 @@
     { pkgs, ... }:
     {
       environment.systemPackages = with pkgs; [
+        fzf
+        jq
         opencode
         qwen-code
       ];
