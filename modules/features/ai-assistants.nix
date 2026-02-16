@@ -216,6 +216,17 @@
             example = literalExpression "./dotfiles/CLAUDE.md";
           };
 
+          skillsPath = mkOption {
+            type = types.nullOr types.path;
+            default = null;
+            description = ''
+              Path to directory containing Claude Code skills.
+              Each subdirectory should contain a SKILL.md file.
+              Skills will be symlinked to ~/.claude/skills/
+            '';
+            example = literalExpression "./dotfiles/skills";
+          };
+
           extraConfig = mkOption {
             type = types.attrs;
             default = { };
@@ -304,6 +315,21 @@
             (mkIf (cfg.claudeCode.enable && cfg.claudeCode.claudeMdPath != null) {
               ".claude/CLAUDE.md".source = cfg.claudeCode.claudeMdPath;
             })
+
+            # ----- Claude Code skills (symlink to ~/.claude/skills/) -----
+            (mkIf (cfg.claudeCode.enable && cfg.claudeCode.skillsPath != null) (
+              let
+                skillDirs = builtins.readDir cfg.claudeCode.skillsPath;
+                skills = lib.filterAttrs (_name: type: type == "directory") skillDirs;
+              in
+              lib.mapAttrs' (
+                skillName: _type:
+                lib.nameValuePair ".claude/skills/${skillName}" {
+                  source = cfg.claudeCode.skillsPath + "/${skillName}";
+                  recursive = true;
+                }
+              ) skills
+            ))
 
             # ----- Qwen Code config (~/.qwen/settings.json) -----
             (mkIf (cfg.qwenCode.enable && enabledMcpServers != { }) {
