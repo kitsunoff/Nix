@@ -53,8 +53,13 @@
           config.flake.overlays.custom-packages
 
           # OpenCode (system-specific, can't be in top-level overlay)
+          # Override npmDepsHash due to upstream mismatch
           (final: _prev: {
-            opencode = inputs.opencode.packages.${system}.default;
+            opencode = inputs.opencode.packages.${system}.default.overrideAttrs (oldAttrs: {
+              npmDeps = oldAttrs.npmDeps.overrideAttrs {
+                outputHash = "sha256-Wbfyy/bruFHKUWsyJ2aiPXAzLkk5MNBfN6QdGPQwZS0=";
+              };
+            });
           })
         ];
       };

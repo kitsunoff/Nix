@@ -14,20 +14,20 @@
 
         opencode = {
           enable = lib.mkDefault true;
-          agentsPath = lib.mkDefault ../dotfiles/agents;
-          skillsPath = lib.mkDefault ../dotfiles/skills;
+          agentsPath = lib.mkDefault ../../dotfiles/agents;
+          skillsPath = lib.mkDefault ../../dotfiles/skills;
         };
 
         claudeCode = {
           enable = lib.mkDefault true;
-          agentsPath = lib.mkDefault ../dotfiles/agents-claude;
-          claudeMdPath = lib.mkDefault ../dotfiles/CLAUDE.md;
-          skillsPath = lib.mkDefault ../dotfiles/skills;
+          agentsPath = lib.mkDefault ../../dotfiles/agents-claude;
+          claudeMdPath = lib.mkDefault ../../dotfiles/CLAUDE.md;
+          skillsPath = lib.mkDefault ../../dotfiles/skills;
         };
 
         qwenCode = {
           enable = lib.mkDefault true;
-          agentsPath = lib.mkDefault ../dotfiles/agents-qwen;
+          agentsPath = lib.mkDefault ../../dotfiles/agents-qwen;
         };
       };
     };
