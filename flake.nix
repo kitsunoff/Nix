@@ -31,6 +31,7 @@
     # OpenCode - terminal-based AI assistant (official upstream)
     opencode.url = "github:sst/opencode/dev";
     opencode.inputs.nixpkgs.follows = "nixpkgs";
+
   };
 
   outputs =
