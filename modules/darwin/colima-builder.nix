@@ -100,8 +100,9 @@
 
         nix.distributedBuilds = true;
 
-        # Allow building for linux systems
-        nix.settings.extra-platforms = cfg.systems;
+        # Do NOT set extra-platforms on the host - this would make Nix think
+        # the host can build these platforms locally, bypassing the remote builder.
+        # The remote builder advertises its supported systems via nix.buildMachines.
 
         # Setup script for bootstrapping the builder
         environment.systemPackages = [
