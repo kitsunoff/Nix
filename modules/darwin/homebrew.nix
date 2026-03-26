@@ -13,7 +13,7 @@
           cleanup = "zap";
         };
         taps = [ ];
-        brews = [ ];
+        brews = [ "talosctl" ];
         casks = [ ];
         masApps = { };
       };
