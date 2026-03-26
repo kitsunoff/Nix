@@ -10,6 +10,7 @@
         jq
         opencode
         qwen-code
+        talm
       ];
     };
 
@@ -22,6 +23,7 @@
         jq
         opencode
         qwen-code
+        talm
       ];
     };
 }
