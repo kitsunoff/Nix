@@ -7,10 +7,12 @@
     {
       environment.systemPackages = with pkgs; [
         fzf
+        go
         jq
         opencode
         qwen-code
         talm
+        nim
       ];
     };
 
@@ -20,10 +22,12 @@
     {
       environment.systemPackages = with pkgs; [
         fzf
+        go
         jq
         opencode
         qwen-code
         talm
+        nim
       ];
     };
 }
