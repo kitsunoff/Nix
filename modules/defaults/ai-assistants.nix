@@ -26,6 +26,12 @@
           marketplaces = lib.mkDefault {
             claude-code-companions.repo = "lexfrei/ccc";
             claude-plugins-official.repo = "anthropics/claude-plugins-official";
+            # Switch to `cozystack/ccp` on main once https://github.com/cozystack/ccp/pull/3
+            # is merged (drop the `branch` field and change `repo` to `cozystack/ccp`).
+            cozystack-ccp = {
+              repo = "kitsunoff/ccp";
+              branch = "feat/cozy-external-app-skill";
+            };
           };
           enabledPlugins = lib.mkDefault [
             # Agents
@@ -51,6 +57,9 @@
             "mcp-loki@claude-code-companions"
             "mcp-transmission@claude-code-companions"
             "mcp-tg@claude-code-companions"
+            # Cozystack plugins
+            "cozy-deploy@cozystack-ccp"
+            "cozy-external-app@cozystack-ccp"
           ];
         };
 
