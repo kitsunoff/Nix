@@ -443,7 +443,7 @@
                     ''
                       if [ ! -d "${installDir}" ]; then
                         $DRY_RUN_CMD mkdir --parents "$(dirname "${installDir}")"
-                        $DRY_RUN_CMD git clone --depth 1 ${branchFlag}"https://github.com/${mCfg.repo}.git" "${installDir}"
+                        $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth 1 ${branchFlag}"https://github.com/${mCfg.repo}.git" "${installDir}"
                       fi
                     ''
                   ) cfg.claudeCode.marketplaces
