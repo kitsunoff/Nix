@@ -155,6 +155,26 @@
         "type": "github"
       }
     },
+    "nix-vscode-extensions": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1777866180,
+        "narHash": "sha256-F6DrT3DNNhzz8B4FKADRxPCFPpdax/PFSTykwkgD9R8=",
+        "owner": "nix-community",
+        "repo": "nix-vscode-extensions",
+        "rev": "cadfc931421c1c1c200469ffaa3b4ff8b1cbe1f9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nix-vscode-extensions",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1774273680,
@@ -200,6 +220,7 @@
         "import-tree": "import-tree",
         "mcp-servers-nix": "mcp-servers-nix",
         "nix-darwin": "nix-darwin",
+        "nix-vscode-extensions": "nix-vscode-extensions",
         "nixpkgs": "nixpkgs",
         "opencode": "opencode",
         "treefmt-nix": "treefmt-nix"

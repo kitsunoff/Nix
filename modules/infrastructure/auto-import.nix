@@ -11,6 +11,7 @@ let
   mkOverlays = system: [
     config.flake.overlays.rocksdb-fix
     inputs.mcp-servers-nix.overlays.default
+    inputs.nix-vscode-extensions.overlays.default
     config.flake.overlays.custom-packages
     (_final: _prev: {
       opencode = inputs.opencode.packages.${system}.default;
