@@ -23,6 +23,44 @@
           agentsPath = lib.mkDefault ../../dotfiles/agents-claude;
           claudeMdPath = lib.mkDefault ../../dotfiles/CLAUDE.md;
           skillsPath = lib.mkDefault ../../dotfiles/skills;
+          marketplaces = lib.mkDefault {
+            claude-code-companions.repo = "lexfrei/ccc";
+            claude-plugins-official.repo = "anthropics/claude-plugins-official";
+            # Switch to `cozystack/ccp` on main once https://github.com/cozystack/ccp/pull/3
+            # is merged (drop the `branch` field and change `repo` to `cozystack/ccp`).
+            cozystack-ccp = {
+              repo = "kitsunoff/ccp";
+              branch = "feat/cozy-external-app-skill";
+            };
+          };
+          enabledPlugins = lib.mkDefault [
+            # Agents
+            "task-orchestrator@claude-code-companions"
+            "tech-oracle@claude-code-companions"
+            "gopher-builder@claude-code-companions"
+            "snake-charmer@claude-code-companions"
+            "templ-weaver@claude-code-companions"
+            "kube-pilot@claude-code-companions"
+            "chart-builder@claude-code-companions"
+            "docker-smith@claude-code-companions"
+            "code-guardian@claude-code-companions"
+            "doc-curator@claude-code-companions"
+            # Skills
+            "review-toolkit@claude-code-companions"
+            "git-tools@claude-code-companions"
+            "genname@claude-code-companions"
+            "tldrpr@claude-code-companions"
+            "learn@claude-code-companions"
+            "renovate-check@claude-code-companions"
+            "agent-father@claude-code-companions"
+            # MCP servers
+            "mcp-loki@claude-code-companions"
+            "mcp-transmission@claude-code-companions"
+            "mcp-tg@claude-code-companions"
+            # Cozystack plugins
+            "cozy-deploy@cozystack-ccp"
+            "cozy-external-app@cozystack-ccp"
+          ];
         };
 
         qwenCode = {

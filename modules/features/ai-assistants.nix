@@ -93,6 +93,39 @@
           })
         ) servers;
 
+      # Convert enabledPlugins list to attrset for settings.json
+      enabledPluginsAttr = builtins.listToAttrs (
+        map (name: { inherit name; value = true; }) cfg.claudeCode.enabledPlugins
+      );
+
+      # Build Claude Code settings.json content
+      claudeSettingsContent =
+        (optionalAttrs (enabledMcpServers != { }) {
+          mcpServers = mkStdioMcpConfig enabledMcpServers;
+        })
+        // (optionalAttrs (cfg.claudeCode.enabledPlugins != [ ]) {
+          enabledPlugins = enabledPluginsAttr;
+        })
+        // cfg.claudeCode.extraConfig;
+
+      # Generate known_marketplaces.json content.
+      # Claude Code's `source.repo` accepts the `owner/repo#branch` shorthand when a
+      # non-default branch is pinned — this keeps Claude's marketplace resolver aligned
+      # with the branch the activation script actually clones.
+      knownMarketplacesContent = lib.mapAttrs (
+        name: mCfg:
+        {
+          source = {
+            source = "github";
+            repo =
+              if mCfg.branch == null
+              then mCfg.repo
+              else "${mCfg.repo}#${mCfg.branch}";
+          };
+          installLocation = "${config.home.homeDirectory}/.claude/plugins/marketplaces/${name}";
+        }
+      ) cfg.claudeCode.marketplaces;
+
       # MCP server submodule type
       mcpServerType = types.submodule {
         options = {
@@ -227,6 +260,51 @@
             example = literalExpression "./dotfiles/skills";
           };
 
+          marketplaces = mkOption {
+            type = types.attrsOf (types.submodule {
+              options = {
+                repo = mkOption {
+                  type = types.str;
+                  description = "GitHub repository (owner/repo)";
+                  example = "lexfrei/ccc";
+                };
+                branch = mkOption {
+                  type = types.nullOr types.str;
+                  default = null;
+                  description = ''
+                    Optional branch ref. When null, the repo's default branch is used.
+                    Useful for testing plugins on unmerged feature branches.
+                  '';
+                  example = "feat/cozy-external-app-skill";
+                };
+              };
+            });
+            default = { };
+            description = ''
+              Plugin marketplaces to register.
+              Repos are cloned to ~/.claude/plugins/marketplaces/ on first activation.
+              Existing clones are not refreshed — delete the directory to force re-clone.
+            '';
+            example = literalExpression ''
+              {
+                claude-code-companions = {
+                  repo = "lexfrei/ccc";
+                };
+                ccp-dev = {
+                  repo = "kitsunoff/ccp";
+                  branch = "feat/cozy-external-app-skill";
+                };
+              }
+            '';
+          };
+
+          enabledPlugins = mkOption {
+            type = types.listOf types.str;
+            default = [ ];
+            description = "Plugins to enable (format: plugin-name@marketplace-name)";
+            example = [ "golangci-lint@claude-code-companions" "review-toolkit@claude-code-companions" ];
+          };
+
           extraConfig = mkOption {
             type = types.attrs;
             default = { };
@@ -298,22 +376,25 @@
               ) skills
             ))
 
-            # ----- Claude Code MCP config (~/.claude/settings.json) -----
-            (mkIf (cfg.claudeCode.enable && enabledMcpServers != { }) {
+            # ----- Claude Code settings (~/.claude/settings.json) -----
+            (mkIf (cfg.claudeCode.enable && claudeSettingsContent != { }) {
               ".claude/settings.json" = {
                 force = true;
-                text = builtins.toJSON (
-                  {
-                    mcpServers = mkStdioMcpConfig enabledMcpServers;
-                  }
-                  // cfg.claudeCode.extraConfig
-                );
+                text = builtins.toJSON claudeSettingsContent;
               };
             })
 
             # ----- Claude Code global CLAUDE.md (~/.claude/CLAUDE.md) -----
             (mkIf (cfg.claudeCode.enable && cfg.claudeCode.claudeMdPath != null) {
               ".claude/CLAUDE.md".source = cfg.claudeCode.claudeMdPath;
+            })
+
+            # ----- Claude Code plugin marketplaces -----
+            (mkIf (cfg.claudeCode.enable && cfg.claudeCode.marketplaces != { }) {
+              ".claude/plugins/known_marketplaces.json" = {
+                force = true;
+                text = builtins.toJSON knownMarketplacesContent;
+              };
             })
 
             # ----- Claude Code skills (symlink to ~/.claude/skills/) -----
@@ -347,6 +428,29 @@
 
           # Activation Scripts
           activation = {
+            claudeMarketplaces = mkIf (cfg.claudeCode.enable && cfg.claudeCode.marketplaces != { }) (
+              lib.hm.dag.entryAfter [ "writeBoundary" ] (
+                lib.concatStringsSep "\n" (
+                  lib.mapAttrsToList (
+                    name: mCfg:
+                    let
+                      installDir = "${config.home.homeDirectory}/.claude/plugins/marketplaces/${name}";
+                      branchFlag =
+                        if mCfg.branch == null
+                        then ""
+                        else "--branch ${lib.escapeShellArg mCfg.branch} ";
+                    in
+                    ''
+                      if [ ! -d "${installDir}" ]; then
+                        $DRY_RUN_CMD mkdir --parents "$(dirname "${installDir}")"
+                        $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth 1 ${branchFlag}"https://github.com/${mCfg.repo}.git" "${installDir}"
+                      fi
+                    ''
+                  ) cfg.claudeCode.marketplaces
+                )
+              )
+            );
+
             claudeAgents = mkIf (cfg.claudeCode.enable && cfg.claudeCode.agentsPath != null) (
               lib.hm.dag.entryAfter [ "writeBoundary" ] ''
                 $DRY_RUN_CMD mkdir -p $VERBOSE_ARG ${config.home.homeDirectory}/.claude
