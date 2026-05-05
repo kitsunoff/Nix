@@ -32,6 +32,10 @@
     opencode.url = "github:sst/opencode/dev";
     opencode.inputs.nixpkgs.follows = "nixpkgs";
 
+    # VS Code marketplace extensions as Nix packages
+    nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
+    nix-vscode-extensions.inputs.nixpkgs.follows = "nixpkgs";
+
   };
 
   outputs =
