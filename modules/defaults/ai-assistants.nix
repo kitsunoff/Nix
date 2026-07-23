@@ -41,6 +41,7 @@
             "mcp-loki@claude-code-companions"
             "mcp-tg@claude-code-companions"
             "playwright@claude-plugins-official"
+            "telegram@claude-plugins-official"
             # Cozystack plugins
             "cozy-deploy@cozystack-ccp"
             "cozy-external-app@cozystack-ccp"
