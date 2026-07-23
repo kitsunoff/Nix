@@ -123,6 +123,10 @@
               else "${mCfg.repo}#${mCfg.branch}";
           };
           installLocation = "${config.home.homeDirectory}/.claude/plugins/marketplaces/${name}";
+          # Required as a string by Claude Code's marketplace validator; without it
+          # the config is rejected as corrupted and all `/plugin` commands fail.
+          # Claude Code rewrites this on its own marketplace refresh.
+          lastUpdated = "2026-01-01T00:00:00.000Z";
         }
       ) cfg.claudeCode.marketplaces;
 
