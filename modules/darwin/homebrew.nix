@@ -14,7 +14,7 @@
         };
         taps = [ ];
         brews = [ "talosctl" "teleport" ];
-        casks = [ ];
+        casks = [ "claude" ];
         masApps = { };
       };
     };

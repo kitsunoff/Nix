@@ -328,6 +328,24 @@
             description = "Extra configuration merged into ~/.qwen/settings.json";
           };
         };
+
+        # ========== Claude Desktop ==========
+        # GUI client. Not packaged in nixpkgs — install separately
+        # (e.g. `homebrew.casks = [ "claude" ]` on Darwin).
+        # This module only manages the MCP configuration file, reusing the
+        # same enabledMcpServers attrset as Claude Code / Qwen Code.
+        claudeDesktop = {
+          enable = mkEnableOption "Claude Desktop MCP configuration";
+
+          extraConfig = mkOption {
+            type = types.attrs;
+            default = { };
+            description = ''
+              Extra configuration merged into Claude Desktop's
+              claude_desktop_config.json (Library/Application Support/Claude/).
+            '';
+          };
+        };
       };
 
       config = mkIf cfg.enable {
@@ -421,6 +439,21 @@
                     mcpServers = mkStdioMcpConfig enabledMcpServers;
                   }
                   // cfg.qwenCode.extraConfig
+                );
+              };
+            })
+
+            # ----- Claude Desktop MCP config -----
+            # macOS path: ~/Library/Application Support/Claude/claude_desktop_config.json
+            # Reuses the same enabledMcpServers pool as Claude Code / Qwen Code.
+            (mkIf cfg.claudeDesktop.enable {
+              "Library/Application Support/Claude/claude_desktop_config.json" = {
+                force = true;
+                text = builtins.toJSON (
+                  (optionalAttrs (enabledMcpServers != { }) {
+                    mcpServers = mkStdioMcpConfig enabledMcpServers;
+                  })
+                  // cfg.claudeDesktop.extraConfig
                 );
               };
             })

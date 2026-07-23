@@ -57,6 +57,7 @@
             "mcp-loki@claude-code-companions"
             "mcp-transmission@claude-code-companions"
             "mcp-tg@claude-code-companions"
+            "playwright@claude-plugins-official"
             # Cozystack plugins
             "cozy-deploy@cozystack-ccp"
             "cozy-external-app@cozystack-ccp"
@@ -67,6 +68,8 @@
           enable = lib.mkDefault true;
           agentsPath = lib.mkDefault ../../dotfiles/agents-qwen;
         };
+
+        claudeDesktop.enable = lib.mkDefault true;
       };
     };
 }
