@@ -34,28 +34,11 @@
             };
           };
           enabledPlugins = lib.mkDefault [
-            # Agents
-            "task-orchestrator@claude-code-companions"
-            "tech-oracle@claude-code-companions"
-            "gopher-builder@claude-code-companions"
-            "snake-charmer@claude-code-companions"
-            "templ-weaver@claude-code-companions"
-            "kube-pilot@claude-code-companions"
-            "chart-builder@claude-code-companions"
-            "docker-smith@claude-code-companions"
-            "code-guardian@claude-code-companions"
-            "doc-curator@claude-code-companions"
             # Skills
             "review-toolkit@claude-code-companions"
-            "git-tools@claude-code-companions"
-            "genname@claude-code-companions"
             "tldrpr@claude-code-companions"
-            "learn@claude-code-companions"
-            "renovate-check@claude-code-companions"
-            "agent-father@claude-code-companions"
             # MCP servers
             "mcp-loki@claude-code-companions"
-            "mcp-transmission@claude-code-companions"
             "mcp-tg@claude-code-companions"
             "playwright@claude-plugins-official"
             # Cozystack plugins
