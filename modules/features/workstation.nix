@@ -11,7 +11,6 @@
         jq
         opencode
         qwen-code
-        talm
         nim
       ];
     };
@@ -26,7 +25,6 @@
         jq
         opencode
         qwen-code
-        talm
         nim
       ];
     };
