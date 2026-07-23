@@ -7,7 +7,7 @@
     editor = "nvim";
 
     extraModules = [
-      { environment.systemPackages = with inputs.nixpkgs.legacyPackages.aarch64-darwin; [ nix-tree ]; }
+      { environment.systemPackages = with inputs.nixpkgs.legacyPackages.aarch64-darwin; [ nix-tree nodejs ]; }
 
       # Colima-based Linux builder with Rosetta 2 for x86_64-linux builds
       {
