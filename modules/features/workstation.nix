@@ -11,6 +11,7 @@
         go
         jq
         opencode
+        openspec
         qwen-code
         nim
       ];
@@ -26,6 +27,7 @@
         go
         jq
         opencode
+        openspec
         qwen-code
         nim
       ];
