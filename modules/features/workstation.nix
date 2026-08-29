@@ -6,6 +6,7 @@
     { pkgs, ... }:
     {
       environment.systemPackages = with pkgs; [
+        bun
         fzf
         go
         jq
@@ -20,6 +21,7 @@
     { pkgs, ... }:
     {
       environment.systemPackages = with pkgs; [
+        bun
         fzf
         go
         jq
