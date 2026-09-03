@@ -6,10 +6,12 @@
     { pkgs, ... }:
     {
       environment.systemPackages = with pkgs; [
+        bun
         fzf
         go
         jq
         opencode
+        openspec
         qwen-code
         nim
       ];
@@ -20,10 +22,12 @@
     { pkgs, ... }:
     {
       environment.systemPackages = with pkgs; [
+        bun
         fzf
         go
         jq
         opencode
+        openspec
         qwen-code
         nim
       ];
