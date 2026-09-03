@@ -37,6 +37,8 @@
             # Skills
             "review-toolkit@claude-code-companions"
             "tldrpr@claude-code-companions"
+            # Hooks
+            "trailer-guard@claude-code-companions"
             # MCP servers
             "mcp-loki@claude-code-companions"
             "mcp-tg@claude-code-companions"
