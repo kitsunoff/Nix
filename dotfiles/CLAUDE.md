@@ -260,7 +260,7 @@ When creating Pull Requests, follow these strict guidelines:
 
 ### Commit Message Format
 
-Use **Semantic Commit Messages** with Claude attribution:
+Use **Semantic Commit Messages** with a vendor-neutral assistance trailer:
 
 **Format:**
 
@@ -269,10 +269,15 @@ type(scope): brief description of changes
 
 Optional longer explanation of what was changed and why.
 
-Co-Authored-By: Claude <noreply@anthropic.com>
+Assisted-by: LLM
+Signed-off-by: Maxim Belyy <maximbel2003@gmail.com>
 ```
 
-**IMPORTANT**: Do NOT include "🤖 Generated with [Claude Code]" anywhere. The `Co-Authored-By: Claude <noreply@anthropic.com>` line is sufficient attribution for commits only. In PR descriptions, comments, documentation, and all other content - no Claude attribution is needed at all.
+**IMPORTANT — the trailer names no vendor and no model.** `Assisted-by:` takes exactly one value, `LLM`. Anything that advertises a product instead — `Assisted-by: Claude`, `Co-Authored-By: Claude <noreply@anthropic.com>`, `Generated-by:`, a "🤖 Generated with [Claude Code]" line — is wrong in a commit message, a PR description, a comment, documentation and everywhere else. Same for session links: a `Claude-Session:` trailer or a URL to an assistant transcript never belongs in a commit or a PR; the reason goes in the message instead.
+
+This is enforced locally, not just by convention: the `trailer-guard` hook (enabled in `modules/defaults/ai-assistants.nix`) reports any commit on the branch that lost its `Signed-off-by`, carries a `Claude-Session:` line, or names a model in `Assisted-by:`, and blocks the commands that would publish the branch until they are fixed. It prints a `git rebase --exec` recipe that repairs only your own commits.
+
+Note for existing repositories: history may carry the older `Co-Authored-By: Claude` form. Do not rewrite published commits to fix it — apply the neutral trailer going forward.
 
 **Types:**
 
