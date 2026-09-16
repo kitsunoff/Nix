@@ -13,6 +13,7 @@
         opencode
         openspec
         qwen-code
+        yq-go
         nim
       ];
     };
@@ -29,6 +30,7 @@
         opencode
         openspec
         qwen-code
+        yq-go
         nim
       ];
     };
