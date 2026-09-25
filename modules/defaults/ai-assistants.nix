@@ -32,6 +32,8 @@
               repo = "kitsunoff/ccp";
               branch = "feat/cozy-external-app-skill";
             };
+            # Private repo; cloned via the gh git-credential helper.
+            agent-plugins.repo = "kitsunoff/agent-plugins";
           };
           enabledPlugins = lib.mkDefault [
             # Skills
@@ -47,6 +49,8 @@
             # Cozystack plugins
             "cozy-deploy@cozystack-ccp"
             "cozy-external-app@cozystack-ccp"
+            # Research plugins
+            "research-kit@agent-plugins"
           ];
         };
 
