@@ -33,11 +33,7 @@
               branch = "feat/cozy-external-app-skill";
             };
             # Private repo; cloned via the gh git-credential helper.
-            # Drop the `branch` field once https://github.com/kitsunoff/agent-plugins/pull/1 is merged.
-            agent-plugins = {
-              repo = "kitsunoff/agent-plugins";
-              branch = "feat/research-kit";
-            };
+            agent-plugins.repo = "kitsunoff/agent-plugins";
           };
           enabledPlugins = lib.mkDefault [
             # Skills
