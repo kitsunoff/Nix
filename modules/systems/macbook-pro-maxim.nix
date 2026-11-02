@@ -9,6 +9,20 @@
     extraModules = [
       { environment.systemPackages = with inputs.nixpkgs.legacyPackages.aarch64-darwin; [ nix-tree nodejs ]; }
 
+      # Public DNS resolvers for physical interfaces (VPN services keep their own)
+      {
+        networking = {
+          knownNetworkServices = [
+            "Wi-Fi"
+            "USB 10/100/1000 LAN"
+          ];
+          dns = [
+            "1.1.1.1"
+            "8.8.8.8"
+          ];
+        };
+      }
+
       # Colima-based Linux builder with Rosetta 2 for x86_64-linux builds
       {
         nix.colima-builder = {
