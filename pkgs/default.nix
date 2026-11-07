@@ -8,6 +8,7 @@ in
   inherit ccusage;
   vibe-kanban = pkgs.callPackage ./vibe-kanban.nix { };
   lazybeads = pkgs.callPackage ./lazybeads.nix { };
+  cli-proxy-api = pkgs.callPackage ./cli-proxy-api.nix { };
   claude-statusline = pkgs.callPackage ./claude-statusline.nix { inherit ccusage; };
   openspec = pkgs.callPackage ./openspec.nix { };
   teamclaude = pkgs.callPackage ./teamclaude.nix { };
