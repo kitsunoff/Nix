@@ -13,6 +13,7 @@
         opencode
         openspec
         qwen-code
+        teamclaude
         yq-go
         nim
       ];
@@ -30,6 +31,7 @@
         opencode
         openspec
         qwen-code
+        teamclaude
         yq-go
         nim
       ];

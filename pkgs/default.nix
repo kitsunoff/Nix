@@ -10,4 +10,5 @@ in
   lazybeads = pkgs.callPackage ./lazybeads.nix { };
   claude-statusline = pkgs.callPackage ./claude-statusline.nix { inherit ccusage; };
   openspec = pkgs.callPackage ./openspec.nix { };
+  teamclaude = pkgs.callPackage ./teamclaude.nix { };
 }
