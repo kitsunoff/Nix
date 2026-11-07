@@ -9,7 +9,8 @@
     extraModules = [
       { environment.systemPackages = with inputs.nixpkgs.legacyPackages.aarch64-darwin; [ nix-tree nodejs ]; }
 
-      # Public DNS resolvers for physical interfaces (VPN services keep their own)
+      # Google DNS for physical interfaces: Cloudflare returns Akamai edges with
+      # TLS resets for Steam. VPN services keep their own resolvers.
       {
         networking = {
           knownNetworkServices = [
@@ -17,8 +18,8 @@
             "USB 10/100/1000 LAN"
           ];
           dns = [
-            "1.1.1.1"
             "8.8.8.8"
+            "8.8.4.4"
           ];
         };
       }
