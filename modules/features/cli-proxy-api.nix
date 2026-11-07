@@ -18,8 +18,12 @@
         server = {
           inherit (cfg) host port;
         };
-        # Empty key disables the management API entirely
-        management.secret-key = "";
+        # Empty secret-key disables the management API entirely
+        management = {
+          secret-key = "";
+          # Panel assets would be written next to the config, i.e. into the read-only store
+          disable-control-panel = true;
+        };
         access.api-keys = cfg.apiKeys;
         oauth.auth-dir = cfg.authDir;
       };

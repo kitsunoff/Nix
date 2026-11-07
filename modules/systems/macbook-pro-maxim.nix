@@ -34,6 +34,8 @@
     ];
 
     homeConfig = {
+      programs.cliProxyApi.enable = true;
+
       programs.aiCodeAssistants.opencode = {
         plugins = [ "opencode-alibaba-qwen3-auth" ];
         defaultModel = "alibaba/coder-model";
